@@ -106,51 +106,84 @@ async def help_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def info_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Show detailed bot info."""
-        start = time.time()
-            msg = await update.message.reply_text("⏳ Loading info...")
-                ping_ms = int((time.time() - start) * 1000)
+    start = time.time()
+    msg = await update.message.reply_text("⏳ Loading info...")
+    ping_ms = int((time.time() - start) * 1000)
 
-                    bot_start = context.bot_data.get("start_time", time.time())
-                        uptime = get_uptime(bot_start)
+    bot_start = context.bot_data.get("start_time", time.time())
+    uptime = get_uptime(bot_start)
 
-                            now = datetime.now()
-                                time_str = now.strftime("%I:%M:%S %p")
-                                    date_str = now.strftime("%B %d, %Y")
+    now = datetime.now()
+    time_str = now.strftime("%I:%M:%S %p")
+    date_str = now.strftime("%B %d, %Y")
 
-                                        info_text = (
-                                                    f"🦖 *GODZILLA BOT v{BOT_VERSION}*\n"
-                                                            f"_by {BOT_OWNER}_\n\n"
-                                                                    f"━━━━━━ 🪪 IDENTITY ━━━━━━\n"
-                                                                            f"📛 Name: {BOT_NAME}\n"
-                                                                                    f"🔖 Version: {BOT_VERSION}\n"
-                                                                                            f"👑 Owner: {BOT_OWNER}\n"
-                                                                                                    f"🏠 Community: {BOT_COMMUNITY}\n"
-                                                                                                            f"📅 Born: {BOT_BORN}\n"
-                                                                                                                    f"🌍 Status: 🟢 Online 24/7\n\n"
-                                                                                                                            f"━━━━━━ ⚙️ SYSTEM ━━━━━━\n"
-                                                                                                                                    f"📌 Prefix: {BOT_PREFIX}\n"
-                                                                                                                                            f"💬 Commands: 25+\n"
-                                                                                                                                                    f"🔧 Engine: python-telegram-bot v21\n"
-                                                                                                                                                            f"💻 Runtime: Python {plt.python_version()}\n"
-                                                                                                                                                                    f"🌐 Platform: {plt.system()}\n\n"
-                                                                                                                                                                            f"━━━━━━ 📊 STATS ━━━━━━\n"
-                                                                                                                                                                                    f"⏱ Uptime: {uptime}\n"
-                                                                                                                                                                                            f"🕒 Time: {time_str}\n"
-                                                                                                                                                                                                    f"📅 Date: {date_str}\n"
-                                                                                                                                                                                                            f"⚡ Ping: {ping_ms}ms\n\n"
-                                                                                                                                                                                                                    f"━━━━━━ 👨‍💻 CREDITS ━━━━━━\n"
-                                                                                                                                                                                                                            f"💻 Developer: {BOT_OWNER}\n"
-                                                                                                                                                                                                                                    f"🏠 Built for: {BOT_COMMUNITY}\n"
-                                                                                                                                                                                                                                            f"📦 Hosted on: Railway.app\n\n"
-                                                                                                                                                                                                                                                    f"_Type {BOT_PREFIX}help for all commands_\n"
-                                                                                                                                                                                                                                                            f"_🦖 GODZILLA — King of Bots_"
-                                                                                                                                                                                                                                                                )
+    info_text = f"""╔═══════════════════════════╗
+║   🦖 *GODZILLA BOT v{BOT_VERSION}*  ║
+║      _by {BOT_OWNER}_              ║
+╚═══════════════════════════╝
 
-                                                                                                                                                                                                                                                                    try:
-                                                                                                                                                                                                                                                                            await msg.edit_text(info_text, parse_mode="Markdown")
-                                                                                                                                                                                                                                                                                except Exception:
-                                                                                                                                                                                                                                                                                        await msg.edit_text(info_text)
-                                        )
+━━━━━━ 🪪 *IDENTITY* ━━━━━━━
+📛 *Name*        : {BOT_NAME}
+🔖 *Version*     : {BOT_VERSION}
+👑 *Owner*       : {BOT_OWNER}
+🏠 *Community*   : {BOT_COMMUNITY}
+📅 *Born*        : {BOT_BORN}
+🌍 *Status*      : 🟢 _Online 24/7_
+
+━━━━━━ ⚙️ *SYSTEM* ━━━━━━━━
+📌 *Prefix*      : {BOT_PREFIX}
+💬 *Commands*    : 25+
+🔧 *Engine*      : python-telegram-bot v21
+💻 *Runtime*     : Python {plt.python_version()}
+🧠 *AI Model*    : Gemini (coming soon)
+🌐 *Platform*    : {plt.system()} {plt.release()}
+📡 *Database*    : PostgreSQL
+
+━━━━━━ 📊 *LIVE STATS* ━━━━━━
+⏱️ *Uptime*      : {uptime}
+🕒 *Time*        : {time_str}
+📅 *Date*        : {date_str}
+⚡ *Ping*        : {ping_ms}ms
+🟢 *Mode*        : public
+
+━━━━━━ 🎯 *FEATURES* ━━━━━━━
+▫️ Multi-Platform Downloader
+▫️ Quality Selector (144p-1080p)
+▫️ MP3 Audio Extraction
+▫️ Batch Downloads (5 at once)
+▫️ Thumbnail Extractor
+▫️ Download History
+▫️ Favorites System
+▫️ Referral Rewards
+▫️ Daily Limits
+▫️ Admin Panel
+
+━━━━━━ 👨‍💻 *CREDITS* ━━━━━━━
+💻 *Developer*   : {BOT_OWNER}
+🦖 *Project*     : {BOT_NAME}
+🏠 *Built for*   : {BOT_COMMUNITY}
+🧠 *AI by*       : Anthropic Claude
+📦 *Hosted on*   : Railway.app
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+_Type {BOT_PREFIX}help to see all commands_
+_🦖 GODZILLA — King of Bots_"""
+
+    await msg.edit_text(info_text, parse_mode="Markdown")
+
+
+async def about_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """About the developer."""
+    about_text = (
+        "🦖 *About GODZILLA*\n\n"
+        f"*{BOT_NAME} v{BOT_VERSION}* is the most powerful media downloader "
+        "bot on Telegram, built with love for SHA COMMUNITY.\n\n"
+        "👨‍💻 *Developer:* @Sxhd_Sha\n"
+        "🏠 *Community:* SHA COMMUNITY\n"
+        "🌐 *GitHub:* github.com/Dev-Sahad\n\n"
+        "_🦖 King of Bots. Always Online._"
+    )
+    await update.message.reply_text(about_text, parse_mode="Markdown")
 
 
 async def ping_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
