@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Broadcast — GODZILLA{% endblock %}
+
+{% block content %}
+<h2><i class="bi bi-megaphone"></i> Broadcast</h2>
+
+<div class="row g-3">
+    <div class="col-md-7">
+        <div class="card p-4">
+            <h5>Send to all users</h5>
+            <form method="POST">
+                <div class="mb-3">
+                    <label class="form-label">Target Audience</label>
+                    <select name="target" class="form-select bg-dark text-light">
+                        <option value="all">All users</option>
+                        <option value="premium">Premium users only</option>
+                        <option value="free">Free users only</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Message</label>
+                    <textarea name="message" rows="8" class="form-control bg-dark text-light"
+                              placeholder="Supports Markdown: *bold*, _italic_, `code`, [link](url)" required></textarea>
+                    <small class="text-muted">Message is sent with a "📢 Announcement" header automatically</small>
+                </div>
+                <button type="submit" class="btn btn-godzilla fw-bold"
+                        onclick="return confirm('Send this broadcast to all selected users?')">
+                    <i class="bi bi-send"></i> Send Broadcast
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div class="col-md-5">
+        <div class="card p-3">
+            <h5><i class="bi bi-clock-history"></i> Recent Broadcasts</h5>
+            {% for b in recent %}
+            <div class="border-bottom border-secondary py-2">
+                <div class="text-truncate small">{{ b.message }}</div>
+                <div class="text-muted small mt-1">
+                    ✅ {{ b.sent_to }} | ❌ {{ b.failed }} •
+                    {{ b.created_at.strftime('%m-%d %H:%M') }}
+                </div>
+            </div>
+            {% else %}
+                <p class="text-muted small">No broadcasts sent yet.</p>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

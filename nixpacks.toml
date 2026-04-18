@@ -1,0 +1,19 @@
+[phases.setup]
+nixPkgs = [
+	    "(python311.withPackages (ps: with ps; [ pip ]))",
+	        "ffmpeg",
+	            "gcc",
+	                "postgresql"
+	                ]
+
+	                [phases.install]
+	                cmds = [
+	                	    "python3 -m pip install --upgrade pip",
+	                	        "python3 -m pip install -r requirements.txt"
+	                	        ]
+
+	                	        [start]
+	                	        cmd = "python3 bot.py"
+	                	        
+	                ]
+]

@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}{% if plan %}Edit{% else %}New{% endif %} Plan — GODZILLA{% endblock %}
+
+{% block content %}
+<h2><i class="bi bi-tag"></i> {% if plan %}Edit Plan{% else %}New Plan{% endif %}</h2>
+<a href="{{ url_for('plans_list') }}" class="btn btn-sm btn-outline-secondary mb-3">
+    <i class="bi bi-arrow-left"></i> Back
+</a>
+
+<div class="card p-4">
+    <form method="POST">
+        <div class="row g-3">
+            <div class="col-md-6">
+                <label class="form-label">Plan Key <span class="text-muted">(unique, e.g. "monthly")</span></label>
+                <input type="text" name="key" class="form-control bg-dark text-light"
+                       value="{{ plan.key if plan else '' }}" required pattern="[a-z0-9_]+">
+                <small class="text-muted">lowercase letters, numbers, underscores only</small>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Display Name</label>
+                <input type="text" name="name" class="form-control bg-dark text-light"
+                       value="{{ plan.name if plan else '💎 Monthly Premium' }}" required>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Amount (₹)</label>
+                <input type="number" name="amount" class="form-control bg-dark text-light"
+                       value="{{ plan.amount if plan else 49 }}" min="1" required>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Duration (days)</label>
+                <input type="number" name="duration_days" class="form-control bg-dark text-light"
+                       value="{{ plan.duration_days if plan else 30 }}" min="1" required>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Daily Download Limit</label>
+                <input type="number" name="daily_limit" class="form-control bg-dark text-light"
+                       value="{{ plan.daily_limit if plan else 100 }}" min="1" required>
+            </div>
+            <div class="col-12">
+                <label class="form-label">Description</label>
+                <textarea name="description" rows="2" class="form-control bg-dark text-light">{{ plan.description if plan else '' }}</textarea>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Sort Order <span class="text-muted">(lower = higher)</span></label>
+                <input type="number" name="sort_order" class="form-control bg-dark text-light"
+                       value="{{ plan.sort_order if plan else 1 }}">
+            </div>
+            <div class="col-md-8 d-flex align-items-end">
+                <div class="form-check form-switch">
+                    <input type="checkbox" name="is_active" id="is_active" class="form-check-input"
+                           {% if not plan or plan.is_active %}checked{% endif %}>
+                    <label class="form-check-label" for="is_active">Active (shown in /subscribe)</label>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-4">
+            <button type="submit" class="btn btn-godzilla fw-bold">
+                <i class="bi bi-check-circle"></i> Save Plan
+            </button>
+            <a href="{{ url_for('plans_list') }}" class="btn btn-outline-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,180 @@
+"""
+GODZILLA BOT v3.0.0 - ULTRA EDITION
+Developer: Sxhd
+Community: SHA COMMUNITY
+
+Main entry point — registers all handlers and starts the bot.
+"""
+import os
+import time
+import logging
+from telegram import Update, BotCommand
+from telegram.ext import (
+    Application, CommandHandler, MessageHandler,
+    CallbackQueryHandler, ContextTypes, filters
+)
+
+from config import BOT_TOKEN, BOT_NAME, BOT_VERSION, BOT_OWNER
+from database import init_db, add_log
+
+from handlers.user_commands import (
+    start_cmd, help_cmd, info_cmd, about_cmd, ping_cmd,
+    history_cmd, favorites_cmd, fav_cmd, unfav_cmd,
+    referral_cmd, limit_cmd
+)
+from handlers.admin_commands import (
+    stats_cmd, broadcast_cmd, ban_cmd, unban_cmd,
+    logs_cmd, premium_cmd, admin_help_cmd, admin_panel_cmd
+)
+from handlers.download_handler import (
+    handle_url, download_callback, quality_cmd,
+    quality_pref_callback, thumb_cmd
+)
+from handlers.utility_commands import qr_cmd, short_cmd, translate_cmd
+from handlers.subscription_commands import (
+    myplan_cmd, cancel_cmd
+)
+from handlers.manual_payment import (
+    subscribe_upi_cmd, upi_callback, maybe_handle_utr, approval_callback,
+    approve_cmd, reject_cmd, pending_cmd,
+)
+from admin_panel import start_server_in_thread, set_bot_app
+from config import WEB_PANEL_URL, ADMIN_IDS
+
+
+logging.basicConfig(
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    level=logging.INFO,
+)
+logger = logging.getLogger(__name__)
+
+
+async def post_init(app: Application):
+    """Set up bot after initialization."""
+    # Register command menu in Telegram
+    commands = [
+        BotCommand("start", "🦖 Start the bot"),
+        BotCommand("help", "📖 Show help menu"),
+        BotCommand("info", "🪪 Bot info & stats"),
+        BotCommand("history", "📚 Your downloads"),
+        BotCommand("favorites", "⭐ Saved links"),
+        BotCommand("quality", "🎬 Set default quality"),
+        BotCommand("subscribe", "💎 Get Premium"),
+        BotCommand("myplan", "📋 Check your plan"),
+        BotCommand("referral", "🎁 Referral program"),
+        BotCommand("limit", "📊 Daily usage"),
+        BotCommand("qr", "🔲 Generate QR code"),
+        BotCommand("short", "🔗 Shorten URL"),
+        BotCommand("tr", "🌐 Translate text"),
+        BotCommand("ping", "⚡ Check speed"),
+        BotCommand("about", "👨‍💻 About"),
+    ]
+    await app.bot.set_my_commands(commands)
+    logger.info("✅ Command menu registered with Telegram")
+
+    # Store start time in bot_data for uptime tracking
+    app.bot_data["start_time"] = time.time()
+
+
+async def error_handler(update, context):
+    """Global error handler."""
+    logger.error(f"Exception: {context.error}", exc_info=context.error)
+    add_log("ERROR", "exception", None, str(context.error))
+
+
+async def text_router(update, context):
+    """
+    Route incoming text messages:
+    1. Check if user is awaiting UTR → handle payment verification
+    2. Otherwise → pass to URL handler
+    """
+    # First check: is this a UTR response?
+    if await maybe_handle_utr(update, context):
+        return
+    # Otherwise treat as URL
+    await handle_url(update, context)
+
+
+def main():
+    """Start the bot."""
+    if not BOT_TOKEN:
+        logger.error("❌ BOT_TOKEN not set! Check your .env file.")
+        return
+
+    # Initialize database
+    try:
+        init_db()
+        logger.info("✅ Database initialized")
+    except Exception as e:
+        logger.error(f"❌ Database init failed: {e}")
+        return
+
+    # Build application
+    app = Application.builder().token(BOT_TOKEN).post_init(post_init).build()
+
+    # ===== USER COMMANDS =====
+    app.add_handler(CommandHandler("start", start_cmd))
+    app.add_handler(CommandHandler("help", help_cmd))
+    app.add_handler(CommandHandler("info", info_cmd))
+    app.add_handler(CommandHandler("about", about_cmd))
+    app.add_handler(CommandHandler("ping", ping_cmd))
+    app.add_handler(CommandHandler("history", history_cmd))
+    app.add_handler(CommandHandler("favorites", favorites_cmd))
+    app.add_handler(CommandHandler("fav", fav_cmd))
+    app.add_handler(CommandHandler("unfav", unfav_cmd))
+    app.add_handler(CommandHandler("referral", referral_cmd))
+    app.add_handler(CommandHandler("limit", limit_cmd))
+
+    # ===== DOWNLOAD COMMANDS =====
+    app.add_handler(CommandHandler("quality", quality_cmd))
+    app.add_handler(CommandHandler("thumb", thumb_cmd))
+
+    # ===== ADMIN COMMANDS =====
+    app.add_handler(CommandHandler("admin", admin_help_cmd))
+    app.add_handler(CommandHandler("admin_panel", admin_panel_cmd))
+    app.add_handler(CommandHandler("stats", stats_cmd))
+    app.add_handler(CommandHandler("broadcast", broadcast_cmd))
+    app.add_handler(CommandHandler("ban", ban_cmd))
+    app.add_handler(CommandHandler("unban", unban_cmd))
+    app.add_handler(CommandHandler("logs", logs_cmd))
+    app.add_handler(CommandHandler("premium", premium_cmd))
+
+    # ===== UTILITY COMMANDS =====
+    app.add_handler(CommandHandler("qr", qr_cmd))
+    app.add_handler(CommandHandler("short", short_cmd))
+    app.add_handler(CommandHandler("tr", translate_cmd))
+
+    # ===== SUBSCRIPTION COMMANDS (UPI Manual) =====
+    app.add_handler(CommandHandler("subscribe", subscribe_upi_cmd))
+    app.add_handler(CommandHandler("plans", subscribe_upi_cmd))
+    app.add_handler(CommandHandler("myplan", myplan_cmd))
+    app.add_handler(CommandHandler("cancel", cancel_cmd))
+
+    # ===== ADMIN PAYMENT APPROVAL =====
+    app.add_handler(CommandHandler("pending", pending_cmd))
+    app.add_handler(CommandHandler("approve", approve_cmd))
+    app.add_handler(CommandHandler("reject", reject_cmd))
+
+    # ===== CALLBACK HANDLERS =====
+    app.add_handler(CallbackQueryHandler(download_callback, pattern="^dl_|^q_"))
+    app.add_handler(CallbackQueryHandler(quality_pref_callback, pattern="^pref_"))
+    app.add_handler(CallbackQueryHandler(upi_callback, pattern="^upi_"))
+    app.add_handler(CallbackQueryHandler(approval_callback, pattern="^pay_"))
+
+    # ===== TEXT HANDLER (always last — routes UTR vs URL) =====
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, text_router))
+
+    # Error handler
+    app.add_error_handler(error_handler)
+
+    # Start webhook + admin panel server in background
+    set_bot_app(app)
+    start_server_in_thread()
+    logger.info("🌐 Admin panel + Razorpay webhook server started")
+
+    logger.info(f"🦖 {BOT_NAME} v{BOT_VERSION} is online! Developer: {BOT_OWNER}")
+    app.run_polling(allowed_updates=Update.ALL_TYPES, drop_pending_updates=True)
+
+
+if __name__ == "__main__":
+    main()

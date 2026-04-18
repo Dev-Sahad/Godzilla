@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+{% block title %}User Detail — GODZILLA{% endblock %}
+
+{% block content %}
+<a href="{{ url_for('users_list') }}" class="btn btn-sm btn-outline-secondary mb-3">
+    <i class="bi bi-arrow-left"></i> Back to users
+</a>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-8">
+        <div class="card p-4">
+            <h3>{{ user.first_name or 'Unknown' }}
+                {% if user.is_banned %}<span class="badge bg-danger">Banned</span>
+                {% elif user.is_premium %}<span class="badge badge-premium">Premium</span>
+                {% else %}<span class="badge bg-secondary">Free</span>
+                {% endif %}
+            </h3>
+            <div class="row mt-3 g-2 small">
+                <div class="col-6"><strong>Telegram ID:</strong> <code>{{ user.telegram_id }}</code></div>
+                <div class="col-6"><strong>Username:</strong> {% if user.username %}@{{ user.username }}{% else %}-{% endif %}</div>
+                <div class="col-6"><strong>Joined:</strong> {{ user.joined_at.strftime('%Y-%m-%d %H:%M') }}</div>
+                <div class="col-6"><strong>Downloads Today:</strong> {{ user.downloads_today }}</div>
+                <div class="col-6"><strong>Total Downloads:</strong> {{ user.total_downloads }}</div>
+                <div class="col-6"><strong>Referrals:</strong> {{ user.referral_count }}</div>
+                {% if user.is_premium and user.subscription_expires_at %}
+                <div class="col-12"><strong>Premium Expires:</strong>
+                    {{ user.subscription_expires_at.strftime('%Y-%m-%d %H:%M') }}
+                    ({{ user.subscription_plan or 'manual' }})
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card p-3">
+            <h5>Actions</h5>
+            <form method="POST" action="{{ url_for('user_action', user_id=user.id) }}">
+                <div class="d-grid gap-2">
+                    {% if user.is_banned %}
+                        <button name="action" value="unban" class="btn btn-success">
+                            <i class="bi bi-unlock"></i> Unban
+                        </button>
+                    {% else %}
+                        <button name="action" value="ban" class="btn btn-danger"
+                                onclick="return confirm('Ban this user?')">
+                            <i class="bi bi-slash-circle"></i> Ban
+                        </button>
+                    {% endif %}
+                </div>
+            </form>
+
+            <hr>
+
+            <form method="POST" action="{{ url_for('user_action', user_id=user.id) }}">
+                <label class="form-label small">Grant Premium</label>
+                <div class="input-group input-group-sm mb-2">
+                    <input type="number" name="days" class="form-control bg-dark text-light" value="30" min="1">
+                    <span class="input-group-text">days</span>
+                </div>
+                <button name="action" value="grant_premium" class="btn btn-warning w-100 btn-sm">
+                    <i class="bi bi-star"></i> Grant Premium
+                </button>
+            </form>
+
+            {% if user.is_premium %}
+            <form method="POST" action="{{ url_for('user_action', user_id=user.id) }}" class="mt-2">
+                <button name="action" value="revoke_premium" class="btn btn-outline-danger w-100 btn-sm"
+                        onclick="return confirm('Revoke premium?')">
+                    <i class="bi bi-x-circle"></i> Revoke Premium
+                </button>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-md-7">
+        <div class="card p-3">
+            <h5><i class="bi bi-download"></i> Recent Downloads</h5>
+            <table class="table table-dark table-sm">
+                <thead><tr><th>Title</th><th>Platform</th><th>Type</th><th>When</th></tr></thead>
+                <tbody>
+                {% for d in downloads %}
+                    <tr>
+                        <td class="text-truncate" style="max-width: 180px;">{{ d.title or 'Unknown' }}</td>
+                        <td><span class="badge bg-secondary">{{ d.platform }}</span></td>
+                        <td>{{ d.media_type }}</td>
+                        <td class="text-muted small">{{ d.created_at.strftime('%m-%d %H:%M') }}</td>
+                    </tr>
+                {% else %}
+                    <tr><td colspan="4" class="text-center text-muted">No downloads</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="col-md-5">
+        <div class="card p-3">
+            <h5><i class="bi bi-credit-card"></i> Payment History</h5>
+            <table class="table table-dark table-sm">
+                <thead><tr><th>Plan</th><th>Amount</th><th>Status</th><th>Date</th></tr></thead>
+                <tbody>
+                {% for p in payments %}
+                    <tr>
+                        <td>{{ p.plan }}</td>
+                        <td>₹{{ p.amount / 100 }}</td>
+                        <td>
+                            {% if p.status == 'paid' %}<span class="badge bg-success">Paid</span>
+                            {% elif p.status == 'failed' %}<span class="badge bg-danger">Failed</span>
+                            {% else %}<span class="badge bg-warning">{{ p.status }}</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-muted small">{{ p.created_at.strftime('%m-%d') }}</td>
+                    </tr>
+                {% else %}
+                    <tr><td colspan="4" class="text-center text-muted">No payments</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

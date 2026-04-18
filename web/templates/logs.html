@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}Logs — GODZILLA{% endblock %}
+
+{% block content %}
+<h2><i class="bi bi-list-ul"></i> Activity Logs</h2>
+
+<div class="mb-3">
+    <div class="btn-group">
+        <a href="?level=all" class="btn btn-sm {% if level == 'all' %}btn-godzilla{% else %}btn-outline-secondary{% endif %}">All</a>
+        <a href="?level=info" class="btn btn-sm {% if level == 'info' %}btn-godzilla{% else %}btn-outline-secondary{% endif %}">Info</a>
+        <a href="?level=warning" class="btn btn-sm {% if level == 'warning' %}btn-godzilla{% else %}btn-outline-secondary{% endif %}">Warnings</a>
+        <a href="?level=error" class="btn btn-sm {% if level == 'error' %}btn-godzilla{% else %}btn-outline-secondary{% endif %}">Errors</a>
+    </div>
+</div>
+
+<div class="card p-3">
+    <div class="text-muted small mb-2">Total: {{ total }}</div>
+    <div class="table-responsive">
+    <table class="table table-dark table-sm">
+        <thead>
+            <tr>
+                <th>Time</th>
+                <th>Level</th>
+                <th>Action</th>
+                <th>User</th>
+                <th>Message</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for log in logs %}
+            <tr>
+                <td class="small text-muted">{{ log.created_at.strftime('%m-%d %H:%M:%S') }}</td>
+                <td>
+                    {% if log.level == 'ERROR' %}<span class="badge bg-danger">ERROR</span>
+                    {% elif log.level == 'WARNING' %}<span class="badge bg-warning">WARN</span>
+                    {% else %}<span class="badge bg-info">INFO</span>
+                    {% endif %}
+                </td>
+                <td><code class="small">{{ log.action }}</code></td>
+                <td class="small">{% if log.user_id %}{{ log.user_id }}{% else %}-{% endif %}</td>
+                <td class="small">{{ log.message[:150] }}</td>
+            </tr>
+        {% else %}
+            <tr><td colspan="5" class="text-center text-muted py-4">No logs yet</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    </div>
+
+    {% set pages = (total // per_page) + (1 if total % per_page else 0) %}
+    {% if pages > 1 %}
+    <nav>
+        <ul class="pagination">
+            {% if page > 1 %}
+            <li class="page-item"><a class="page-link" href="?level={{ level }}&page={{ page-1 }}">Prev</a></li>
+            {% endif %}
+            <li class="page-item active"><span class="page-link">{{ page }} / {{ pages }}</span></li>
+            {% if page < pages %}
+            <li class="page-item"><a class="page-link" href="?level={{ level }}&page={{ page+1 }}">Next</a></li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+{% endblock %}

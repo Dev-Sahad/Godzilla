@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — GODZILLA{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="bi bi-speedometer2"></i> Dashboard</h2>
+    <small class="text-muted">Live stats • refresh page to update</small>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+        <div class="card stat-card p-3">
+            <div class="stat-label"><i class="bi bi-people"></i> Total Users</div>
+            <div class="stat-value">{{ stats.total_users }}</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card stat-card p-3">
+            <div class="stat-label"><i class="bi bi-lightning"></i> Active Today</div>
+            <div class="stat-value">{{ stats.active_today }}</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card stat-card p-3">
+            <div class="stat-label"><i class="bi bi-star-fill"></i> Premium Users</div>
+            <div class="stat-value">{{ stats.premium_users }}</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card stat-card p-3">
+            <div class="stat-label"><i class="bi bi-download"></i> Downloads Today</div>
+            <div class="stat-value">{{ stats.downloads_today }}</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card stat-card p-3">
+            <div class="stat-label"><i class="bi bi-currency-rupee"></i> Revenue Total</div>
+            <div class="stat-value">₹{{ "%.0f"|format(stats.total_revenue) }}</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card stat-card p-3">
+            <div class="stat-label"><i class="bi bi-cash"></i> Revenue Today</div>
+            <div class="stat-value">₹{{ "%.0f"|format(stats.revenue_today) }}</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card stat-card p-3">
+            <div class="stat-label"><i class="bi bi-bar-chart"></i> All-Time Downloads</div>
+            <div class="stat-value">{{ stats.total_downloads }}</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card stat-card p-3">
+            <a href="{{ url_for('broadcast') }}" class="text-decoration-none">
+                <div class="stat-label"><i class="bi bi-megaphone"></i> Quick Action</div>
+                <div class="stat-value" style="font-size: 1.3rem;">Broadcast →</div>
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-md-6">
+        <div class="card p-3">
+            <h5><i class="bi bi-clock-history"></i> Recent Downloads</h5>
+            <table class="table table-dark table-sm mt-2">
+                <thead><tr><th>User</th><th>Title</th><th>Platform</th><th>When</th></tr></thead>
+                <tbody>
+                {% for d, u in stats.recent_downloads %}
+                    <tr>
+                        <td><a href="{{ url_for('user_detail', user_id=u.id) }}">{{ u.first_name or u.telegram_id }}</a></td>
+                        <td class="text-truncate" style="max-width: 200px;">{{ d.title or 'Unknown' }}</td>
+                        <td><span class="badge bg-secondary">{{ d.platform }}</span></td>
+                        <td class="text-muted small">{{ d.created_at.strftime('%m-%d %H:%M') }}</td>
+                    </tr>
+                {% else %}
+                    <tr><td colspan="4" class="text-center text-muted">No downloads yet</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card p-3">
+            <h5><i class="bi bi-person-plus"></i> Recent Users</h5>
+            <table class="table table-dark table-sm mt-2">
+                <thead><tr><th>Name</th><th>Joined</th><th>Status</th></tr></thead>
+                <tbody>
+                {% for u in stats.recent_users %}
+                    <tr>
+                        <td>
+                            <a href="{{ url_for('user_detail', user_id=u.id) }}">
+                                {{ u.first_name or u.username or u.telegram_id }}
+                            </a>
+                        </td>
+                        <td class="text-muted small">{{ u.joined_at.strftime('%m-%d %H:%M') }}</td>
+                        <td>
+                            {% if u.is_banned %}<span class="badge bg-danger">Banned</span>
+                            {% elif u.is_premium %}<span class="badge badge-premium">Premium</span>
+                            {% else %}<span class="badge bg-secondary">Free</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr><td colspan="3" class="text-center text-muted">No users yet</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
