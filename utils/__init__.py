@@ -4,5 +4,6 @@ from utils.downloader import (
 )
 from utils.discord_webhook import (
     send_discord_webhook, notify_new_user, notify_download,
-    notify_error, notify_admin_action
+    notify_error, notify_admin_action, notify_command, notify_message,
+    notify_payment_request, notify_subscription
 )

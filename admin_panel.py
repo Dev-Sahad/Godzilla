@@ -175,10 +175,12 @@ def plan_new():
             plan = SubscriptionPlan(
                 key=request.form["key"].strip(),
                 name=request.form["name"].strip(),
+                category=request.form.get("category", "premium").strip(),
                 amount=int(request.form["amount"]),
                 duration_days=int(request.form["duration_days"]),
                 daily_limit=int(request.form["daily_limit"]),
                 description=request.form.get("description", ""),
+                badge=request.form.get("badge", "").strip(),
                 is_active=request.form.get("is_active") == "on",
                 sort_order=int(request.form.get("sort_order", 0)),
             )
@@ -208,10 +210,12 @@ def plan_edit(plan_id):
         if request.method == "POST":
             plan.key = request.form["key"].strip()
             plan.name = request.form["name"].strip()
+            plan.category = request.form.get("category", "premium").strip()
             plan.amount = int(request.form["amount"])
             plan.duration_days = int(request.form["duration_days"])
             plan.daily_limit = int(request.form["daily_limit"])
             plan.description = request.form.get("description", "")
+            plan.badge = request.form.get("badge", "").strip()
             plan.is_active = request.form.get("is_active") == "on"
             plan.sort_order = int(request.form.get("sort_order", 0))
             db.commit()
@@ -444,6 +448,9 @@ def _send_broadcast(message, user_ids):
     if not _bot_app:
         return 0, len(user_ids)
 
+    # Get the bot's event loop (stored by bot.py at startup)
+    bot_loop = _bot_app.bot_data.get("event_loop") if hasattr(_bot_app, "bot_data") else None
+
     async def _send():
         s, f = 0, 0
         for uid in user_ids:
@@ -455,14 +462,23 @@ def _send_broadcast(message, user_ids):
                 )
                 s += 1
                 await asyncio.sleep(0.05)  # rate limit
-            except Exception:
+            except Exception as e:
+                logger.error(f"Broadcast to {uid} failed: {e}")
                 f += 1
         return s, f
 
     try:
-        loop = _bot_app.loop if hasattr(_bot_app, "loop") else asyncio.new_event_loop()
-        future = asyncio.run_coroutine_threadsafe(_send(), loop)
-        return future.result(timeout=300)
+        if bot_loop and bot_loop.is_running():
+            # Use the bot's running loop (thread-safe)
+            future = asyncio.run_coroutine_threadsafe(_send(), bot_loop)
+            return future.result(timeout=300)
+        else:
+            # Fallback: create new loop
+            loop = asyncio.new_event_loop()
+            try:
+                return loop.run_until_complete(_send())
+            finally:
+                loop.close()
     except Exception as e:
         logger.error(f"Broadcast error: {e}")
         return 0, len(user_ids)
@@ -560,6 +576,320 @@ def change_password():
             db.close()
 
     return render_template("change_password.html")
+
+
+# ===== ANALYTICS =====
+
+@app.route("/admin/analytics")
+@login_required
+def analytics():
+    """Analytics dashboard with charts."""
+    db = get_session()
+    try:
+        from sqlalchemy import func, text
+
+        # Last 7 days downloads
+        week_downloads = []
+        for i in range(6, -1, -1):
+            day = datetime.utcnow().date() - timedelta(days=i)
+            count = db.query(Download).filter(
+                func.date(Download.created_at) == day
+            ).count()
+            week_downloads.append({"date": day.strftime("%b %d"), "count": count})
+
+        # Platform breakdown
+        platform_stats = {}
+        rows = db.query(Download.platform, func.count(Download.id)).group_by(Download.platform).all()
+        for platform, count in rows:
+            if platform:
+                platform_stats[platform] = count
+
+        # User growth (last 30 days)
+        growth = []
+        for i in range(29, -1, -1):
+            day = datetime.utcnow().date() - timedelta(days=i)
+            count = db.query(User).filter(func.date(User.created_at) == day).count()
+            growth.append({"date": day.strftime("%b %d"), "count": count})
+
+        # Top users by downloads
+        top_users_raw = (
+            db.query(User, func.count(Download.id).label("dl_count"))
+            .join(Download)
+            .group_by(User.id)
+            .order_by(text("dl_count DESC"))
+            .limit(10)
+            .all()
+        )
+        top_users = [{"user": u, "count": c} for u, c in top_users_raw]
+
+        # Revenue (from approved payment requests)
+        try:
+            from database.models import PaymentRequest
+            total_revenue = db.query(func.sum(PaymentRequest.amount)).filter(
+                PaymentRequest.status == "approved"
+            ).scalar() or 0
+        except Exception:
+            total_revenue = 0
+
+        # Success rate
+        total_dls = db.query(Download).count()
+        success_dls = db.query(Download).filter_by(status="success").count()
+        success_rate = round((success_dls / total_dls * 100) if total_dls else 0, 1)
+
+        stats = {
+            "week_downloads": week_downloads,
+            "platform_stats": platform_stats,
+            "growth": growth,
+            "top_users": top_users,
+            "total_revenue": total_revenue,
+            "success_rate": success_rate,
+            "total_downloads": total_dls,
+        }
+        return render_template("analytics.html", stats=stats)
+    finally:
+        db.close()
+
+
+# ===== REFERRALS =====
+
+@app.route("/admin/referrals")
+@login_required
+def referrals():
+    """Referral program overview."""
+    db = get_session()
+    try:
+        from sqlalchemy import func, desc
+
+        # Top referrers
+        top_referrers = (
+            db.query(User)
+            .filter(User.referral_count > 0)
+            .order_by(desc(User.referral_count))
+            .limit(50)
+            .all()
+        )
+
+        # Recent referrals
+        recent_refs = (
+            db.query(User)
+            .filter(User.referred_by.isnot(None))
+            .order_by(desc(User.created_at))
+            .limit(30)
+            .all()
+        )
+
+        total_referrals = db.query(User).filter(User.referred_by.isnot(None)).count()
+        total_referrers = db.query(User).filter(User.referral_count > 0).count()
+
+        return render_template(
+            "referrals.html",
+            top_referrers=top_referrers,
+            recent_refs=recent_refs,
+            total_referrals=total_referrals,
+            total_referrers=total_referrers,
+        )
+    finally:
+        db.close()
+
+
+# ===== ACTIVITY FEED =====
+
+@app.route("/admin/activity")
+@login_required
+def activity():
+    """Real-time activity feed: users, downloads, logins."""
+    db = get_session()
+    try:
+        recent_users = db.query(User).order_by(User.created_at.desc()).limit(20).all()
+        recent_downloads = db.query(Download).order_by(Download.created_at.desc()).limit(30).all()
+        recent_logs = db.query(Log).order_by(Log.created_at.desc()).limit(20).all()
+
+        return render_template(
+            "activity.html",
+            recent_users=recent_users,
+            recent_downloads=recent_downloads,
+            recent_logs=recent_logs,
+        )
+    finally:
+        db.close()
+
+
+# ===== PAYMENT REQUESTS (UPI) =====
+
+@app.route("/admin/payment-requests")
+@login_required
+def payment_requests():
+    """Manage UPI payment requests from web."""
+    try:
+        from database.models import PaymentRequest
+    except ImportError:
+        flash("PaymentRequest model not available", "warning")
+        return redirect(url_for("dashboard"))
+
+    status_filter = request.args.get("status", "pending")
+    db = get_session()
+    try:
+        query = db.query(PaymentRequest)
+        if status_filter != "all":
+            query = query.filter_by(status=status_filter)
+
+        requests_list = query.order_by(PaymentRequest.created_at.desc()).limit(100).all()
+
+        counts = {
+            "pending": db.query(PaymentRequest).filter_by(status="pending").count(),
+            "approved": db.query(PaymentRequest).filter_by(status="approved").count(),
+            "rejected": db.query(PaymentRequest).filter_by(status="rejected").count(),
+        }
+
+        return render_template(
+            "payment_requests.html",
+            requests=requests_list,
+            counts=counts,
+            status_filter=status_filter,
+        )
+    finally:
+        db.close()
+
+
+@app.route("/admin/payment-requests/<int:req_id>/<action>", methods=["POST"])
+@login_required
+def payment_request_action(req_id, action):
+    """Approve or reject a payment request from web."""
+    from database.models import PaymentRequest
+    from utils.payments import activate_premium
+
+    if action not in ("approve", "reject"):
+        flash("Invalid action", "danger")
+        return redirect(url_for("payment_requests"))
+
+    db = get_session()
+    try:
+        req = db.query(PaymentRequest).get(req_id)
+        if not req:
+            flash("Request not found", "danger")
+            return redirect(url_for("payment_requests"))
+
+        if req.status != "pending":
+            flash(f"Already {req.status}", "warning")
+            return redirect(url_for("payment_requests"))
+
+        admin_id = session.get("admin_id")
+
+        if action == "approve":
+            if activate_premium(req.telegram_id, req.plan_key):
+                req.status = "approved"
+                req.admin_id = admin_id
+                req.processed_at = datetime.utcnow()
+                db.commit()
+                flash(f"✅ Approved #{req_id}", "success")
+
+                # Notify user via bot
+                if _bot_app:
+                    _notify_user_approved(req.telegram_id, req.plan_key)
+            else:
+                flash("Failed to activate premium", "danger")
+        else:
+            req.status = "rejected"
+            req.admin_id = admin_id
+            req.processed_at = datetime.utcnow()
+            db.commit()
+            flash(f"❌ Rejected #{req_id}", "warning")
+
+            if _bot_app:
+                _notify_user_rejected(req.telegram_id, req_id)
+    finally:
+        db.close()
+
+    return redirect(url_for("payment_requests"))
+
+
+def _notify_user_approved(telegram_id, plan_key):
+    """Notify user their payment was approved (thread-safe)."""
+    bot_loop = _bot_app.bot_data.get("event_loop") if hasattr(_bot_app, "bot_data") else None
+
+    async def _send():
+        try:
+            from utils.payments import get_plan
+            plan = get_plan(plan_key) or {}
+            await _bot_app.bot.send_message(
+                chat_id=telegram_id,
+                text=(
+                    "🎉 *Payment Approved!*\n\n"
+                    f"✨ *{plan.get('name', 'Premium')}* activated!\n"
+                    f"📥 Daily Limit: {plan.get('daily_limit', 100)} downloads\n"
+                    f"📅 Duration: {plan.get('duration_days', 30)} days\n\n"
+                    "Use /myplan to check status.\n\n"
+                    "_Thank you for supporting GODZILLA! 🦖_"
+                ),
+                parse_mode="Markdown",
+            )
+        except Exception as e:
+            logger.error(f"Notify approve error: {e}")
+
+    try:
+        if bot_loop and bot_loop.is_running():
+            asyncio.run_coroutine_threadsafe(_send(), bot_loop)
+    except Exception as e:
+        logger.error(f"Bot notify error: {e}")
+
+
+def _notify_user_rejected(telegram_id, req_id):
+    """Notify user their payment was rejected."""
+    bot_loop = _bot_app.bot_data.get("event_loop") if hasattr(_bot_app, "bot_data") else None
+
+    async def _send():
+        try:
+            await _bot_app.bot.send_message(
+                chat_id=telegram_id,
+                text=(
+                    f"❌ *Payment Rejected* — Request `#{req_id}`\n\n"
+                    "Possible reasons: wrong UTR, amount mismatch, duplicate.\n"
+                    "Contact admin if this is a mistake."
+                ),
+                parse_mode="Markdown",
+            )
+        except Exception as e:
+            logger.error(f"Notify reject error: {e}")
+
+    try:
+        if bot_loop and bot_loop.is_running():
+            asyncio.run_coroutine_threadsafe(_send(), bot_loop)
+    except Exception as e:
+        logger.error(f"Bot notify error: {e}")
+
+
+# ===== SET USER LIMIT (from user detail page) =====
+
+@app.route("/admin/users/<int:user_id>/set-limit", methods=["POST"])
+@login_required
+def user_set_limit(user_id):
+    """Set a user's custom daily download limit."""
+    limit_value = request.form.get("custom_limit", "").strip()
+    db = get_session()
+    try:
+        user = db.query(User).get(user_id)
+        if not user:
+            flash("User not found", "danger")
+            return redirect(url_for("users_list"))
+
+        if limit_value.lower() in ("", "reset", "none"):
+            user.custom_limit = None
+            flash(f"Limit reset for {user.first_name}", "success")
+        else:
+            try:
+                new_limit = int(limit_value)
+                if 0 <= new_limit <= 10000:
+                    user.custom_limit = new_limit
+                    flash(f"Limit set to {new_limit}/day for {user.first_name}", "success")
+                else:
+                    flash("Limit must be 0-10000", "danger")
+            except ValueError:
+                flash("Invalid number", "danger")
+
+        db.commit()
+    finally:
+        db.close()
+    return redirect(url_for("user_detail", user_id=user_id))
 
 
 # ===== RAZORPAY WEBHOOK (unchanged logic) =====

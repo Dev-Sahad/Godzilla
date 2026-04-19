@@ -8,4 +8,4 @@ qrcode[pil]
 Pillow
 razorpay>=1.4.2
 flask>=3.0
-bcrypt<4.0
+bcrypt>=4.0

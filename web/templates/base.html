@@ -79,6 +79,16 @@
                         </a>
                     </li>
                     <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'analytics' %}active{% endif %}" href="{{ url_for('analytics') }}">
+                            <i class="bi bi-graph-up"></i> Analytics
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'activity' %}active{% endif %}" href="{{ url_for('activity') }}">
+                            <i class="bi bi-activity"></i> Activity
+                        </a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link {% if 'plan' in request.endpoint %}active{% endif %}" href="{{ url_for('plans_list') }}">
                             <i class="bi bi-tag"></i> Plans
                         </a>
@@ -89,8 +99,18 @@
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link {% if 'payment' in request.endpoint %}active{% endif %}" href="{{ url_for('payments_list') }}">
-                            <i class="bi bi-credit-card"></i> Payments
+                        <a class="nav-link {% if 'referral' in request.endpoint %}active{% endif %}" href="{{ url_for('referrals') }}">
+                            <i class="bi bi-people-fill"></i> Referrals
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if 'payment_request' in request.endpoint %}active{% endif %}" href="{{ url_for('payment_requests') }}">
+                            <i class="bi bi-inbox"></i> Payment Requests
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'payments_list' %}active{% endif %}" href="{{ url_for('payments_list') }}">
+                            <i class="bi bi-credit-card"></i> Payment History
                         </a>
                     </li>
                     <li class="nav-item">

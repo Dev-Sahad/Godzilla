@@ -7,6 +7,7 @@ Main entry point — registers all handlers and starts the bot.
 """
 import os
 import time
+import asyncio
 import logging
 from telegram import Update, BotCommand
 from telegram.ext import (
@@ -24,7 +25,7 @@ from handlers.user_commands import (
 )
 from handlers.admin_commands import (
     stats_cmd, broadcast_cmd, ban_cmd, unban_cmd,
-    logs_cmd, premium_cmd, admin_help_cmd, admin_panel_cmd
+    logs_cmd, premium_cmd, admin_help_cmd, admin_panel_cmd, setlimit_cmd
 )
 from handlers.download_handler import (
     handle_url, download_callback, quality_cmd,
@@ -74,12 +75,39 @@ async def post_init(app: Application):
 
     # Store start time in bot_data for uptime tracking
     app.bot_data["start_time"] = time.time()
+    # Store event loop for Flask broadcast to use
+    app.bot_data["event_loop"] = asyncio.get_event_loop()
 
 
 async def error_handler(update, context):
     """Global error handler."""
     logger.error(f"Exception: {context.error}", exc_info=context.error)
     add_log("ERROR", "exception", None, str(context.error))
+
+
+async def activity_tracker(update, context):
+    """Track all user activity to Discord webhook (type=1 handler — always runs)."""
+    try:
+        from utils import notify_command, notify_message
+        if not update or not update.effective_user:
+            return
+        user = update.effective_user
+
+        if update.message:
+            text = update.message.text or ""
+            if text.startswith("/"):
+                parts = text.split(maxsplit=1)
+                cmd = parts[0][1:].split("@")[0]  # remove / and @botname
+                args = parts[1] if len(parts) > 1 else ""
+                await notify_command(user.id, user.username, user.first_name, cmd, args)
+            elif text:
+                await notify_message(user.id, user.username, user.first_name, text, "text")
+            elif update.message.photo:
+                await notify_message(user.id, user.username, user.first_name, "[Photo]", "photo")
+            elif update.message.document:
+                await notify_message(user.id, user.username, user.first_name, "[Document]", "document")
+    except Exception as e:
+        logger.debug(f"activity_tracker error: {e}")
 
 
 async def text_router(update, context):
@@ -112,6 +140,9 @@ def main():
     # Build application
     app = Application.builder().token(BOT_TOKEN).post_init(post_init).build()
 
+    # ===== ACTIVITY TRACKER (group -1 — runs first, doesn't block other handlers) =====
+    app.add_handler(MessageHandler(filters.ALL, activity_tracker), group=-1)
+
     # ===== USER COMMANDS =====
     app.add_handler(CommandHandler("start", start_cmd))
     app.add_handler(CommandHandler("help", help_cmd))
@@ -138,6 +169,7 @@ def main():
     app.add_handler(CommandHandler("unban", unban_cmd))
     app.add_handler(CommandHandler("logs", logs_cmd))
     app.add_handler(CommandHandler("premium", premium_cmd))
+    app.add_handler(CommandHandler("setlimit", setlimit_cmd))
 
     # ===== UTILITY COMMANDS =====
     app.add_handler(CommandHandler("qr", qr_cmd))

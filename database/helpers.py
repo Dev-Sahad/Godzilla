@@ -72,6 +72,10 @@ def check_download_limit(telegram_id):
         if not user.is_premium:
             limit += user.referral_count * REFERRAL_BONUS
 
+        # Admin-set custom limit overrides everything
+        if getattr(user, "custom_limit", None) is not None:
+            limit = user.custom_limit
+
         return user.downloads_today < limit, user.downloads_today, limit
     finally:
         session.close()

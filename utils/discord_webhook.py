@@ -84,3 +84,60 @@ async def notify_admin_action(admin_id, action, details):
         color=0xFFAA00,
         fields=[{"name": "Admin ID", "value": f"`{admin_id}`", "inline": True}],
     )
+
+
+async def notify_command(user_id, username, first_name, command, args=""):
+    """Notify when a user runs any command."""
+    details = f"/{command}"
+    if args:
+        details += f" `{args[:100]}`"
+    await send_discord_webhook(
+        title="⚡ Command Used",
+        description=details,
+        color=0x7289DA,
+        fields=[
+            {"name": "User", "value": f"{first_name or 'Unknown'}", "inline": True},
+            {"name": "Username", "value": f"@{username}" if username else "None", "inline": True},
+            {"name": "ID", "value": f"`{user_id}`", "inline": True},
+        ],
+    )
+
+
+async def notify_message(user_id, username, first_name, message_text, message_type="text"):
+    """Notify when a user sends a message (not command)."""
+    preview = message_text[:200] + "..." if len(message_text) > 200 else message_text
+    await send_discord_webhook(
+        title=f"💬 User Message ({message_type})",
+        description=f"```\n{preview}\n```",
+        color=0x00D4FF,
+        fields=[
+            {"name": "User", "value": f"{first_name or 'Unknown'}", "inline": True},
+            {"name": "Username", "value": f"@{username}" if username else "None", "inline": True},
+            {"name": "ID", "value": f"`{user_id}`", "inline": True},
+        ],
+    )
+
+
+async def notify_payment_request(user_id, username, plan_key, amount, utr):
+    """Notify on new payment request."""
+    await send_discord_webhook(
+        title="💰 New Payment Request",
+        description=f"Plan: **{plan_key}** | Amount: **₹{amount}**",
+        color=0xFFD700,
+        fields=[
+            {"name": "User", "value": f"@{username}" if username else f"`{user_id}`", "inline": True},
+            {"name": "UTR", "value": f"`{utr}`", "inline": True},
+        ],
+    )
+
+
+async def notify_subscription(user_id, username, plan_name, duration):
+    """Notify on subscription approval."""
+    await send_discord_webhook(
+        title="💎 Premium Activated",
+        description=f"**{plan_name}** — {duration} days",
+        color=0xFF6B00,
+        fields=[
+            {"name": "User", "value": f"@{username}" if username else f"`{user_id}`", "inline": True},
+        ],
+    )

@@ -21,6 +21,26 @@
                 <input type="text" name="name" class="form-control bg-dark text-light"
                        value="{{ plan.name if plan else '💎 Monthly Premium' }}" required>
             </div>
+
+            <div class="col-md-6">
+                <label class="form-label">Category</label>
+                <select name="category" class="form-select bg-dark text-light">
+                    {% set current = plan.category if plan and plan.category else 'premium' %}
+                    <option value="basic" {% if current == 'basic' %}selected{% endif %}>🆓 Basic</option>
+                    <option value="premium" {% if current == 'premium' %}selected{% endif %}>💎 Premium</option>
+                    <option value="pro" {% if current == 'pro' %}selected{% endif %}>🔥 Pro</option>
+                    <option value="lifetime" {% if current == 'lifetime' %}selected{% endif %}>👑 Lifetime</option>
+                    <option value="custom" {% if current == 'custom' %}selected{% endif %}>⚡ Custom</option>
+                </select>
+                <small class="text-muted">Groups plans in /subscribe menu</small>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Badge <span class="text-muted">(optional)</span></label>
+                <input type="text" name="badge" class="form-control bg-dark text-light"
+                       value="{{ plan.badge if plan else '' }}" placeholder="e.g. POPULAR, BEST VALUE">
+                <small class="text-muted">Highlight tag next to name</small>
+            </div>
+
             <div class="col-md-4">
                 <label class="form-label">Amount (₹)</label>
                 <input type="number" name="amount" class="form-control bg-dark text-light"
@@ -36,6 +56,7 @@
                 <input type="number" name="daily_limit" class="form-control bg-dark text-light"
                        value="{{ plan.daily_limit if plan else 100 }}" min="1" required>
             </div>
+
             <div class="col-12">
                 <label class="form-label">Description</label>
                 <textarea name="description" rows="2" class="form-control bg-dark text-light">{{ plan.description if plan else '' }}</textarea>

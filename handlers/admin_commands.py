@@ -271,7 +271,86 @@ async def admin_help_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "*👥 User Management*\n"
         "/ban <user\\_id> — Ban user\n"
         "/unban <user\\_id> — Unban user\n"
-        "/premium <user\\_id> [on/off] — Grant/revoke premium\n\n"
+        "/premium <user\\_id> [on/off] — Grant/revoke premium\n"
+        "/setlimit <user\\_id> <limit> — Change daily limit\n\n"
+        "*💰 Payments*\n"
+        "/pending — List pending payments\n"
+        "/approve <id> — Approve payment\n"
+        "/reject <id> — Reject payment\n\n"
         "_🔐 Admin access only_"
     )
     await update.message.reply_text(text, parse_mode="Markdown")
+
+
+async def setlimit_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Admin: /setlimit <user_id> <daily_limit>"""
+    if not await admin_only(update):
+        return
+
+    if len(context.args) < 2:
+        await update.message.reply_text(
+            "Usage: `/setlimit <user_id> <daily_limit>`\n\n"
+            "Examples:\n"
+            "`/setlimit 123456789 500` — set 500/day\n"
+            "`/setlimit 123456789 reset` — remove custom limit (use plan default)",
+            parse_mode="Markdown",
+        )
+        return
+
+    try:
+        target_id = int(context.args[0])
+        limit_arg = context.args[1].lower()
+    except ValueError:
+        await update.message.reply_text("❌ Invalid user ID.")
+        return
+
+    from database.models import get_session, User
+    session = get_session()
+    try:
+        user = session.query(User).filter_by(telegram_id=target_id).first()
+        if not user:
+            await update.message.reply_text(f"❌ User `{target_id}` not found.", parse_mode="Markdown")
+            return
+
+        if limit_arg == "reset":
+            user.custom_limit = None
+            session.commit()
+            await update.message.reply_text(
+                f"✅ Custom limit *removed* for `{target_id}`.\n"
+                f"Now uses plan default.",
+                parse_mode="Markdown",
+            )
+        else:
+            try:
+                new_limit = int(limit_arg)
+                if new_limit < 0 or new_limit > 10000:
+                    raise ValueError
+            except ValueError:
+                await update.message.reply_text("❌ Limit must be a number 0-10000, or 'reset'.")
+                return
+
+            user.custom_limit = new_limit
+            session.commit()
+            await update.message.reply_text(
+                f"✅ Daily limit set to *{new_limit}* for `{target_id}`.",
+                parse_mode="Markdown",
+            )
+
+            # Notify user
+            try:
+                await context.bot.send_message(
+                    chat_id=target_id,
+                    text=f"📣 *Admin update:*\n\nYour daily download limit is now *{new_limit}* downloads/day.",
+                    parse_mode="Markdown",
+                )
+            except Exception:
+                pass
+
+        await notify_admin_action(
+            update.effective_user.id,
+            "Daily Limit Changed",
+            f"User: {target_id} | New limit: {limit_arg}",
+        )
+    finally:
+        session.close()
+

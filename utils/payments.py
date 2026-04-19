@@ -41,6 +41,8 @@ def get_plans():
         return {
             p.key: {
                 "name": p.name,
+                "category": getattr(p, "category", None) or "premium",
+                "badge": getattr(p, "badge", None) or "",
                 "amount": p.amount,
                 "duration_days": p.duration_days,
                 "daily_limit": p.daily_limit,

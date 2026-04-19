@@ -71,6 +71,26 @@
                 </button>
             </form>
             {% endif %}
+
+            <hr>
+
+            <form method="POST" action="{{ url_for('user_set_limit', user_id=user.id) }}">
+                <label class="form-label small">
+                    Custom Daily Limit
+                    {% if user.custom_limit %}
+                        <span class="badge bg-info text-dark">Active: {{ user.custom_limit }}</span>
+                    {% endif %}
+                </label>
+                <div class="input-group input-group-sm mb-2">
+                    <input type="text" name="custom_limit" class="form-control bg-dark text-light"
+                           value="{{ user.custom_limit or '' }}"
+                           placeholder="e.g. 500 or 'reset'">
+                </div>
+                <button type="submit" class="btn btn-info w-100 btn-sm">
+                    <i class="bi bi-sliders"></i> Set Limit
+                </button>
+                <small class="text-muted d-block mt-1">Type 'reset' to use plan default</small>
+            </form>
         </div>
     </div>
 </div>

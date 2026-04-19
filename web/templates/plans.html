@@ -9,52 +9,87 @@
     </a>
 </div>
 
-<div class="card p-3">
-    <table class="table table-dark table-hover">
-        <thead>
-            <tr>
-                <th>#</th>
-                <th>Key</th>
-                <th>Name</th>
-                <th>Amount</th>
-                <th>Duration</th>
-                <th>Daily Limit</th>
-                <th>Status</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for p in plans %}
-            <tr>
-                <td>{{ p.sort_order }}</td>
-                <td><code>{{ p.key }}</code></td>
-                <td>{{ p.name }}</td>
-                <td>₹{{ p.amount }}</td>
-                <td>{{ p.duration_days }} days</td>
-                <td>{{ p.daily_limit }}</td>
-                <td>
-                    {% if p.is_active %}
-                        <span class="badge bg-success">Active</span>
-                    {% else %}
-                        <span class="badge bg-secondary">Inactive</span>
-                    {% endif %}
-                </td>
-                <td>
-                    <a href="{{ url_for('plan_edit', plan_id=p.id) }}" class="btn btn-sm btn-outline-primary">
-                        <i class="bi bi-pencil"></i>
-                    </a>
-                    <form method="POST" action="{{ url_for('plan_delete', plan_id=p.id) }}" class="d-inline"
-                          onsubmit="return confirm('Delete this plan?')">
-                        <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
-                    </form>
-                </td>
-            </tr>
-            {% else %}
-            <tr><td colspan="8" class="text-center text-muted py-4">No plans. Click "New Plan" to create one.</td></tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</div>
+{% set categories = {
+    'basic': ('🆓 Basic', 'secondary'),
+    'premium': ('💎 Premium', 'warning'),
+    'pro': ('🔥 Pro', 'danger'),
+    'lifetime': ('👑 Lifetime', 'info'),
+    'custom': ('⚡ Custom', 'success')
+} %}
+
+{% set grouped = {} %}
+{% for p in plans %}
+    {% set cat = p.category or 'premium' %}
+    {% if cat not in grouped %}{% set _ = grouped.update({cat: []}) %}{% endif %}
+    {% set _ = grouped[cat].append(p) %}
+{% endfor %}
+
+{% if plans %}
+    {% for cat_key, (cat_name, cat_color) in categories.items() %}
+        {% if grouped.get(cat_key) %}
+        <div class="card p-3 mb-3">
+            <h5 class="mb-3">
+                <span class="badge bg-{{ cat_color }}">{{ cat_name }}</span>
+                <span class="text-muted small">({{ grouped[cat_key]|length }} plans)</span>
+            </h5>
+            <table class="table table-dark table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Key</th>
+                        <th>Name</th>
+                        <th>Badge</th>
+                        <th>Amount</th>
+                        <th>Duration</th>
+                        <th>Daily Limit</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p in grouped[cat_key] %}
+                    <tr>
+                        <td>{{ p.sort_order }}</td>
+                        <td><code>{{ p.key }}</code></td>
+                        <td>{{ p.name }}</td>
+                        <td>
+                            {% if p.badge %}
+                                <span class="badge bg-warning text-dark">{{ p.badge }}</span>
+                            {% else %}
+                                <span class="text-muted">—</span>
+                            {% endif %}
+                        </td>
+                        <td>₹{{ p.amount }}</td>
+                        <td>{{ p.duration_days }} days</td>
+                        <td>{{ p.daily_limit }}</td>
+                        <td>
+                            {% if p.is_active %}
+                                <span class="badge bg-success">Active</span>
+                            {% else %}
+                                <span class="badge bg-secondary">Inactive</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{{ url_for('plan_edit', plan_id=p.id) }}" class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                            <form method="POST" action="{{ url_for('plan_delete', plan_id=p.id) }}" class="d-inline"
+                                  onsubmit="return confirm('Delete this plan?')">
+                                <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+    {% endfor %}
+{% else %}
+    <div class="card p-5 text-center">
+        <p class="text-muted">No plans yet. Click <strong>New Plan</strong> to create one.</p>
+    </div>
+{% endif %}
 
 <div class="alert alert-info mt-3">
     <strong>💡 Tip:</strong> Changes apply instantly — no bot restart needed. Users see new prices when they run <code>/subscribe</code>.

@@ -40,6 +40,7 @@ class User(Base):
     referred_by = Column(BigInteger, nullable=True)
     referral_count = Column(Integer, default=0)
     referral_reward_claimed = Column(Boolean, default=False)   # Got 7-day bonus?
+    custom_limit = Column(Integer, nullable=True)              # Admin-set daily limit override
 
     downloads = relationship("Download", back_populates="user", cascade="all, delete")
     favorites = relationship("Favorite", back_populates="user", cascade="all, delete")
@@ -123,10 +124,12 @@ class SubscriptionPlan(Base):
     id = Column(Integer, primary_key=True)
     key = Column(String(50), unique=True, index=True, nullable=False)  # e.g. "monthly"
     name = Column(String(100), nullable=False)                          # e.g. "💎 Monthly Premium"
+    category = Column(String(50), default="premium", index=True)       # premium/pro/basic/lifetime/custom
     amount = Column(Integer, nullable=False)                            # In rupees (whole)
     duration_days = Column(Integer, nullable=False)                     # 30, 90, 365
     daily_limit = Column(Integer, default=100)
     description = Column(Text, default="")
+    badge = Column(String(50), default="")                              # e.g. "POPULAR", "BEST VALUE"
     is_active = Column(Boolean, default=True)                           # Show in /subscribe?
     sort_order = Column(Integer, default=0)
     created_at = Column(DateTime, default=datetime.utcnow)

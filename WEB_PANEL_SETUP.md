@@ -25,8 +25,8 @@ In your Railway project → your bot service → **Variables** tab:
 
 ```
 ADMIN_WEB_USER=admin
-ADMIN_WEB_PASS=SxhdSha@123
-FLASK_SECRET_KEY=cfe216f40e290c6e63273a5fcb1d59aba6c54bb96f5e3dde02956e332df499b1
+ADMIN_WEB_PASS=godzilla123
+FLASK_SECRET_KEY=paste-a-long-random-string-here
 ```
 
 **Generate a secure secret key:**
@@ -68,7 +68,7 @@ Open in browser: `https://YOUR-URL/login`
 
 **Login with:**
 - Username: `admin`
-- Password: `SxhdSha@123`
+- Password: `godzilla123`
 
 **🔒 IMPORTANT:** Go to top-right **key icon** → **Change Password** immediately!
 
