@@ -164,9 +164,67 @@ class BotAdmin(Base):
     telegram_id = Column(BigInteger, unique=True, index=True, nullable=False)
     username = Column(String(100), nullable=True)
     first_name = Column(String(100), nullable=True)
-    promoted_by = Column(BigInteger, nullable=False)  # telegram_id of super admin who promoted
-    role = Column(String(50), default="admin")         # admin, moderator (future use)
+    promoted_by = Column(BigInteger, nullable=False)
+    role = Column(String(50), default="admin")
     notes = Column(Text, default="")
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
+# ===== v3.5: FRIENDS SYSTEM =====
+
+class Friendship(Base):
+    """User-to-user friendship."""
+    __tablename__ = "friendships"
+
+    id = Column(Integer, primary_key=True)
+    user_id = Column(BigInteger, index=True, nullable=False)          # requester
+    friend_id = Column(BigInteger, index=True, nullable=False)        # target
+    status = Column(String(20), default="pending")                    # pending, accepted, blocked
+    created_at = Column(DateTime, default=datetime.utcnow)
+    accepted_at = Column(DateTime, nullable=True)
+
+
+# ===== v3.5: MYSTERY BOX / DAILY REWARDS =====
+
+class DailyReward(Base):
+    """Tracks user's daily box claims."""
+    __tablename__ = "daily_rewards"
+
+    id = Column(Integer, primary_key=True)
+    telegram_id = Column(BigInteger, index=True, nullable=False)
+    reward_type = Column(String(50))          # downloads, premium_days, points, badge
+    reward_value = Column(String(100))        # amount or badge key
+    claimed_at = Column(DateTime, default=datetime.utcnow)
+    streak_day = Column(Integer, default=1)   # which day in current streak
+
+
+class UserStreak(Base):
+    """Daily login streaks."""
+    __tablename__ = "user_streaks"
+
+    id = Column(Integer, primary_key=True)
+    telegram_id = Column(BigInteger, unique=True, index=True, nullable=False)
+    current_streak = Column(Integer, default=0)
+    longest_streak = Column(Integer, default=0)
+    last_claim_date = Column(DateTime, nullable=True)
+    total_claims = Column(Integer, default=0)
+    extra_downloads = Column(Integer, default=0)  # accumulated bonus downloads
+
+
+# ===== v3.5: CLOUD SYNC (Google Drive) =====
+
+class CloudIntegration(Base):
+    """User's Google Drive OAuth tokens."""
+    __tablename__ = "cloud_integrations"
+
+    id = Column(Integer, primary_key=True)
+    telegram_id = Column(BigInteger, unique=True, index=True, nullable=False)
+    provider = Column(String(30), default="google_drive")
+    access_token = Column(Text)
+    refresh_token = Column(Text)
+    expires_at = Column(DateTime, nullable=True)
+    folder_id = Column(String(100), nullable=True)  # GODZILLA folder in user's Drive
+    enabled = Column(Boolean, default=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
 

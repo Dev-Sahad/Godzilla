@@ -22,21 +22,41 @@ USER_COMMANDS = [
     BotCommand("info", "🪪 Bot info & stats"),
     BotCommand("about", "👨‍💻 About GODZILLA"),
     BotCommand("ping", "⚡ Check bot speed"),
+    # Profile
     BotCommand("profile", "👤 View your profile"),
     BotCommand("setbio", "📝 Set your bio"),
     BotCommand("setname", "✏️ Set display name"),
     BotCommand("setemoji", "😀 Change avatar emoji"),
     BotCommand("badges", "🏆 View all badges"),
+    BotCommand("sharecard", "🎨 Share your profile card"),
+    # Friends
+    BotCommand("addfriend", "🤝 Add a friend"),
+    BotCommand("friends", "👥 View your friends"),
+    BotCommand("unfriend", "💔 Remove a friend"),
+    # Rewards
+    BotCommand("daily", "🎁 Claim daily mystery box"),
+    BotCommand("streak", "🔥 View your streak"),
+    BotCommand("rewards", "📊 Recent rewards"),
+    # AI
+    BotCommand("askai", "🤖 Ask AI anything"),
+    BotCommand("script", "🎬 AI video script generator"),
+    BotCommand("aisearch", "🧠 Smart AI search"),
+    # Cloud
+    BotCommand("cloudsync", "☁️ Setup Google Drive"),
+    BotCommand("cloudstatus", "📡 Cloud sync status"),
+    # Downloads
     BotCommand("history", "📚 Your download history"),
     BotCommand("favorites", "⭐ Saved favorite links"),
     BotCommand("fav", "⭐ Add link to favorites"),
     BotCommand("unfav", "❌ Remove from favorites"),
-    BotCommand("quality", "🎬 Set default video quality"),
+    BotCommand("quality", "🎬 Set default quality"),
     BotCommand("thumb", "🖼️ Get video thumbnail"),
+    # Subscription
     BotCommand("subscribe", "💎 Get Premium plans"),
     BotCommand("plans", "💰 View subscription plans"),
-    BotCommand("myplan", "📋 Check your plan status"),
+    BotCommand("myplan", "📋 Check your plan"),
     BotCommand("cancel", "🚫 Cancel subscription"),
+    # Other
     BotCommand("referral", "🎁 Referral program"),
     BotCommand("limit", "📊 Check daily usage"),
     BotCommand("qr", "🔲 Generate QR code"),

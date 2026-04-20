@@ -44,6 +44,15 @@ from handlers.profile import (
     profile_cmd, setbio_cmd, setname_cmd, setemoji_cmd, profile_callback,
     badges_cmd,
 )
+from handlers.friends import (
+    addfriend_cmd, friends_cmd, unfriend_cmd, friend_callback,
+)
+from handlers.daily_rewards import daily_cmd, streak_cmd, rewards_cmd
+from handlers.share_card import sharecard_cmd
+from handlers.ai_features import askai_cmd, script_cmd, aisearch_cmd
+from handlers.cloud_sync import (
+    cloudsync_cmd, cloudstatus_cmd, clouddisconnect_cmd, cloud_callback,
+)
 from admin_panel import start_server_in_thread, set_bot_app
 from config import WEB_PANEL_URL
 
@@ -160,6 +169,30 @@ def main():
     app.add_handler(CommandHandler("setemoji", setemoji_cmd))
     app.add_handler(CommandHandler("badges", badges_cmd))
 
+    # ===== v3.5: FRIENDS SYSTEM =====
+    app.add_handler(CommandHandler("addfriend", addfriend_cmd))
+    app.add_handler(CommandHandler("friends", friends_cmd))
+    app.add_handler(CommandHandler("unfriend", unfriend_cmd))
+
+    # ===== v3.5: DAILY REWARDS =====
+    app.add_handler(CommandHandler("daily", daily_cmd))
+    app.add_handler(CommandHandler("streak", streak_cmd))
+    app.add_handler(CommandHandler("rewards", rewards_cmd))
+
+    # ===== v3.5: SHARE CARD =====
+    app.add_handler(CommandHandler("sharecard", sharecard_cmd))
+
+    # ===== v3.5: AI FEATURES =====
+    app.add_handler(CommandHandler("askai", askai_cmd))
+    app.add_handler(CommandHandler("ai", askai_cmd))  # alias
+    app.add_handler(CommandHandler("script", script_cmd))
+    app.add_handler(CommandHandler("aisearch", aisearch_cmd))
+
+    # ===== v3.5: CLOUD SYNC =====
+    app.add_handler(CommandHandler("cloudsync", cloudsync_cmd))
+    app.add_handler(CommandHandler("cloudstatus", cloudstatus_cmd))
+    app.add_handler(CommandHandler("clouddisconnect", clouddisconnect_cmd))
+
     # ===== DOWNLOAD COMMANDS =====
     app.add_handler(CommandHandler("quality", quality_cmd))
     app.add_handler(CommandHandler("thumb", thumb_cmd))
@@ -202,6 +235,8 @@ def main():
     app.add_handler(CallbackQueryHandler(upi_callback, pattern="^upi_"))
     app.add_handler(CallbackQueryHandler(approval_callback, pattern="^pay_"))
     app.add_handler(CallbackQueryHandler(profile_callback, pattern="^profile_"))
+    app.add_handler(CallbackQueryHandler(friend_callback, pattern="^friend_"))
+    app.add_handler(CallbackQueryHandler(cloud_callback, pattern="^cloud_"))
 
     # ===== TEXT HANDLER (always last — routes UTR vs URL) =====
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, text_router))
