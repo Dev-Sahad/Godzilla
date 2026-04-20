@@ -9,12 +9,32 @@
 <div class="row g-3 mb-4">
     <div class="col-md-8">
         <div class="card p-4">
-            <h3>{{ user.first_name or 'Unknown' }}
+            <h3>
+                <span style="font-size: 1.5em;">{{ user.avatar_emoji or '🦖' }}</span>
+                {{ user.display_name or user.first_name or 'Unknown' }}
                 {% if user.is_banned %}<span class="badge bg-danger">Banned</span>
                 {% elif user.is_premium %}<span class="badge badge-premium">Premium</span>
                 {% else %}<span class="badge bg-secondary">Free</span>
                 {% endif %}
+                {% if user.title %}<span class="badge bg-warning text-dark">{{ user.title }}</span>{% endif %}
             </h3>
+
+            {% if user.bio %}
+            <p class="text-muted fst-italic mt-2 mb-2">"{{ user.bio }}"</p>
+            {% endif %}
+
+            {% if user.badges %}
+            <div class="mb-2">
+                <small class="text-muted">Badges:</small>
+                <span class="ms-2">
+                {% set badge_emojis = {'early_bird':'🌅','loyal':'💎','downloader':'📥','power_user':'⚡','legend':'👑','referrer':'🤝','ambassador':'🌟','premium':'💳','veteran':'🎖'} %}
+                {% for key, emoji in badge_emojis.items() %}
+                    {% if key in user.badges %}{{ emoji }}{% endif %}
+                {% endfor %}
+                </span>
+            </div>
+            {% endif %}
+
             <div class="row mt-3 g-2 small">
                 <div class="col-6"><strong>Telegram ID:</strong> <code>{{ user.telegram_id }}</code></div>
                 <div class="col-6"><strong>Username:</strong> {% if user.username %}@{{ user.username }}{% else %}-{% endif %}</div>
@@ -22,6 +42,12 @@
                 <div class="col-6"><strong>Downloads Today:</strong> {{ user.downloads_today }}</div>
                 <div class="col-6"><strong>Total Downloads:</strong> {{ user.total_downloads }}</div>
                 <div class="col-6"><strong>Referrals:</strong> {{ user.referral_count }}</div>
+                <div class="col-6"><strong>Reputation:</strong> {{ user.reputation or 0 }}</div>
+                {% if user.custom_limit %}
+                <div class="col-6"><strong>Custom Limit:</strong>
+                    <span class="badge bg-info text-dark">{{ user.custom_limit }}/day</span>
+                </div>
+                {% endif %}
                 {% if user.is_premium and user.subscription_expires_at %}
                 <div class="col-12"><strong>Premium Expires:</strong>
                     {{ user.subscription_expires_at.strftime('%Y-%m-%d %H:%M') }}

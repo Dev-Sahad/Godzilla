@@ -39,6 +39,10 @@ from handlers.manual_payment import (
     subscribe_upi_cmd, upi_callback, maybe_handle_utr, approval_callback,
     approve_cmd, reject_cmd, pending_cmd,
 )
+from handlers.profile import (
+    profile_cmd, setbio_cmd, setname_cmd, setemoji_cmd, profile_callback,
+    badges_cmd,
+)
 from admin_panel import start_server_in_thread, set_bot_app
 from config import WEB_PANEL_URL, ADMIN_IDS
 
@@ -156,6 +160,13 @@ def main():
     app.add_handler(CommandHandler("referral", referral_cmd))
     app.add_handler(CommandHandler("limit", limit_cmd))
 
+    # ===== PROFILE COMMANDS (NEW v3.3) =====
+    app.add_handler(CommandHandler("profile", profile_cmd))
+    app.add_handler(CommandHandler("setbio", setbio_cmd))
+    app.add_handler(CommandHandler("setname", setname_cmd))
+    app.add_handler(CommandHandler("setemoji", setemoji_cmd))
+    app.add_handler(CommandHandler("badges", badges_cmd))
+
     # ===== DOWNLOAD COMMANDS =====
     app.add_handler(CommandHandler("quality", quality_cmd))
     app.add_handler(CommandHandler("thumb", thumb_cmd))
@@ -192,6 +203,7 @@ def main():
     app.add_handler(CallbackQueryHandler(quality_pref_callback, pattern="^pref_"))
     app.add_handler(CallbackQueryHandler(upi_callback, pattern="^upi_"))
     app.add_handler(CallbackQueryHandler(approval_callback, pattern="^pay_"))
+    app.add_handler(CallbackQueryHandler(profile_callback, pattern="^profile_"))
 
     # ===== TEXT HANDLER (always last — routes UTR vs URL) =====
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, text_router))

@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% block title %}Backup & Restore — GODZILLA{% endblock %}
+
+{% block content %}
+<h2><i class="bi bi-cloud-download"></i> Backup & Restore</h2>
+<p class="text-muted mb-4">Export all your data or restore from a backup file.</p>
+
+<!-- Current Data Stats -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="stat-card p-3">
+            <div class="stat-label">Users</div>
+            <div class="stat-value">{{ counts.users }}</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card p-3">
+            <div class="stat-label">Plans</div>
+            <div class="stat-value">{{ counts.plans }}</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card p-3">
+            <div class="stat-label">Downloads</div>
+            <div class="stat-value">{{ counts.downloads }}</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card p-3">
+            <div class="stat-label">Payments</div>
+            <div class="stat-value">{{ counts.payment_requests }}</div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3">
+    <!-- EXPORT -->
+    <div class="col-md-6">
+        <div class="card p-4">
+            <h4><i class="bi bi-download"></i> Export Data</h4>
+            <p class="text-muted">Download all your data as a JSON backup file.</p>
+            <p class="small">
+                <strong>Includes:</strong><br>
+                ✓ User profiles (bio, badges, limits)<br>
+                ✓ Subscription plans (all categories)<br>
+                ✓ Settings<br>
+                ✓ Payment history<br>
+                ✓ Admin users (no passwords)<br>
+                <span class="text-muted">✗ Downloads history (too large)</span><br>
+                <span class="text-muted">✗ Passwords (for security)</span>
+            </p>
+            <a href="{{ url_for('backup_export') }}" class="btn btn-godzilla fw-bold w-100">
+                <i class="bi bi-cloud-download"></i> Download Backup (.json)
+            </a>
+            <p class="small text-muted mt-2 mb-0">
+                💡 Tip: Download a backup weekly for safety.
+            </p>
+        </div>
+    </div>
+
+    <!-- RESTORE -->
+    <div class="col-md-6">
+        <div class="card p-4">
+            <h4><i class="bi bi-upload"></i> Restore Data</h4>
+            <p class="text-muted">Upload a backup file to restore data.</p>
+
+            <form method="POST" action="{{ url_for('backup_restore') }}" enctype="multipart/form-data">
+                <div class="mb-3">
+                    <label class="form-label">Backup File (.json)</label>
+                    <input type="file" name="backup_file" class="form-control bg-dark text-light"
+                           accept=".json" required>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Restore Mode</label>
+                    <select name="mode" class="form-select bg-dark text-light">
+                        <option value="merge" selected>Merge — Keep existing, add new</option>
+                        <option value="replace">Replace — Overwrite existing</option>
+                    </select>
+                    <small class="text-muted">
+                        <strong>Merge:</strong> Skips plans that already exist<br>
+                        <strong>Replace:</strong> Overwrites plans (destructive)
+                    </small>
+                </div>
+
+                <button type="submit" class="btn btn-warning fw-bold w-100"
+                        onclick="return confirm('Restore data? This may modify existing records.')">
+                    <i class="bi bi-cloud-upload"></i> Restore from Backup
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="alert alert-info mt-4">
+    <h5><i class="bi bi-info-circle"></i> About Backups</h5>
+    <ul class="small mb-0">
+        <li><strong>Automatic:</strong> Your PostgreSQL on Railway is auto-backed up by Railway</li>
+        <li><strong>Manual:</strong> Use this page to download/upload backups anytime</li>
+        <li><strong>Portable:</strong> JSON format works across environments</li>
+        <li><strong>Safe:</strong> Passwords are NOT exported (re-set after restore)</li>
+    </ul>
+</div>
+
+<div class="alert alert-warning mt-3">
+    <h5><i class="bi bi-shield-exclamation"></i> Important Notes</h5>
+    <ul class="small mb-0">
+        <li>Restore only updates <strong>existing users' profiles</strong> — doesn't create new users</li>
+        <li>Restore creates/updates <strong>plans and settings</strong> safely</li>
+        <li>Your bot must be running when you restore (for schema consistency)</li>
+        <li>Store backups securely — they contain user data</li>
+    </ul>
+</div>
+{% endblock %}

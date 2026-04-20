@@ -172,8 +172,21 @@ def plan_new():
     if request.method == "POST":
         db = get_session()
         try:
+            key = request.form["key"].strip().lower()
+
+            # Check if key already exists
+            existing = db.query(SubscriptionPlan).filter_by(key=key).first()
+            if existing:
+                flash(
+                    f"⚠️ Plan key '{key}' already exists! "
+                    f"Choose a different key (e.g. {key}_2, {key}_v2). "
+                    f"Or go to Plans and EDIT the existing one.",
+                    "danger",
+                )
+                return render_template("plan_form.html", plan=None)
+
             plan = SubscriptionPlan(
-                key=request.form["key"].strip(),
+                key=key,
                 name=request.form["name"].strip(),
                 category=request.form.get("category", "premium").strip(),
                 amount=int(request.form["amount"]),
@@ -186,7 +199,7 @@ def plan_new():
             )
             db.add(plan)
             db.commit()
-            flash(f"Plan '{plan.name}' created!", "success")
+            flash(f"✅ Plan '{plan.name}' created!", "success")
             return redirect(url_for("plans_list"))
         except Exception as e:
             flash(f"Error: {e}", "danger")
@@ -923,6 +936,220 @@ def user_set_limit(user_id):
     finally:
         db.close()
     return redirect(url_for("user_detail", user_id=user_id))
+
+
+# ===== BACKUP / RESTORE (NEW v3.3) =====
+
+@app.route("/admin/backup")
+@login_required
+def backup_page():
+    """Show backup/restore page."""
+    db = get_session()
+    try:
+        counts = {
+            "users": db.query(User).count(),
+            "downloads": db.query(Download).count(),
+            "plans": db.query(SubscriptionPlan).count(),
+            "logs": db.query(Log).count(),
+        }
+        try:
+            from database.models import PaymentRequest
+            counts["payment_requests"] = db.query(PaymentRequest).count()
+        except Exception:
+            counts["payment_requests"] = 0
+        return render_template("backup.html", counts=counts)
+    finally:
+        db.close()
+
+
+@app.route("/admin/backup/export")
+@login_required
+def backup_export():
+    """Download all data as JSON."""
+    import json as json_module
+    from flask import Response
+
+    db = get_session()
+    try:
+        data = {
+            "version": "3.3",
+            "exported_at": datetime.utcnow().isoformat(),
+            "users": [],
+            "plans": [],
+            "downloads": [],
+            "admins": [],
+            "settings": [],
+            "payment_requests": [],
+        }
+
+        # Users
+        for u in db.query(User).all():
+            data["users"].append({
+                "telegram_id": u.telegram_id,
+                "username": u.username,
+                "first_name": u.first_name,
+                "is_banned": u.is_banned,
+                "is_premium": u.is_premium,
+                "subscription_expires_at": u.subscription_expires_at.isoformat() if u.subscription_expires_at else None,
+                "subscription_plan": u.subscription_plan,
+                "total_downloads": u.total_downloads,
+                "referral_count": u.referral_count,
+                "referred_by": u.referred_by,
+                "custom_limit": u.custom_limit,
+                "bio": getattr(u, "bio", ""),
+                "avatar_emoji": getattr(u, "avatar_emoji", "🦖"),
+                "display_name": getattr(u, "display_name", None),
+                "badges": getattr(u, "badges", ""),
+                "title": getattr(u, "title", ""),
+                "joined_at": u.joined_at.isoformat() if u.joined_at else None,
+            })
+
+        # Plans
+        for p in db.query(SubscriptionPlan).all():
+            data["plans"].append({
+                "key": p.key,
+                "name": p.name,
+                "category": getattr(p, "category", "premium"),
+                "badge": getattr(p, "badge", ""),
+                "amount": p.amount,
+                "duration_days": p.duration_days,
+                "daily_limit": p.daily_limit,
+                "description": p.description,
+                "is_active": p.is_active,
+                "sort_order": p.sort_order,
+            })
+
+        # Payment requests
+        try:
+            from database.models import PaymentRequest
+            for r in db.query(PaymentRequest).all():
+                data["payment_requests"].append({
+                    "telegram_id": r.telegram_id,
+                    "username": r.username,
+                    "plan_key": r.plan_key,
+                    "amount": r.amount,
+                    "utr": r.utr,
+                    "status": r.status,
+                    "created_at": r.created_at.isoformat() if r.created_at else None,
+                })
+        except Exception as e:
+            logger.error(f"Payment requests export error: {e}")
+
+        # Settings
+        for s in db.query(Settings).all():
+            data["settings"].append({"key": s.key, "value": s.value})
+
+        # Admin users (no passwords)
+        for a in db.query(AdminUser).all():
+            data["admins"].append({
+                "username": a.username,
+                "is_superadmin": a.is_superadmin,
+            })
+
+        json_str = json_module.dumps(data, indent=2, default=str)
+        filename = f"godzilla_backup_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.json"
+
+        return Response(
+            json_str,
+            mimetype="application/json",
+            headers={"Content-Disposition": f"attachment; filename={filename}"},
+        )
+    finally:
+        db.close()
+
+
+@app.route("/admin/backup/restore", methods=["POST"])
+@login_required
+def backup_restore():
+    """Restore data from uploaded JSON."""
+    import json as json_module
+
+    if "backup_file" not in request.files:
+        flash("No file uploaded", "danger")
+        return redirect(url_for("backup_page"))
+
+    f = request.files["backup_file"]
+    if not f.filename:
+        flash("No file selected", "danger")
+        return redirect(url_for("backup_page"))
+
+    try:
+        data = json_module.loads(f.read().decode("utf-8"))
+    except Exception as e:
+        flash(f"Invalid backup file: {e}", "danger")
+        return redirect(url_for("backup_page"))
+
+    restore_mode = request.form.get("mode", "merge")  # merge or replace
+
+    db = get_session()
+    restored_counts = {"plans": 0, "users": 0, "settings": 0}
+
+    try:
+        # Restore plans (safe — SKIP existing)
+        for plan_data in data.get("plans", []):
+            existing = db.query(SubscriptionPlan).filter_by(key=plan_data["key"]).first()
+            if existing and restore_mode == "merge":
+                continue
+            if existing:
+                db.delete(existing)
+                db.commit()
+            plan = SubscriptionPlan(
+                key=plan_data["key"],
+                name=plan_data["name"],
+                category=plan_data.get("category", "premium"),
+                badge=plan_data.get("badge", ""),
+                amount=plan_data["amount"],
+                duration_days=plan_data["duration_days"],
+                daily_limit=plan_data["daily_limit"],
+                description=plan_data.get("description", ""),
+                is_active=plan_data.get("is_active", True),
+                sort_order=plan_data.get("sort_order", 0),
+            )
+            db.add(plan)
+            restored_counts["plans"] += 1
+
+        # Restore settings
+        for s_data in data.get("settings", []):
+            existing = db.query(Settings).filter_by(key=s_data["key"]).first()
+            if existing:
+                existing.value = s_data["value"]
+            else:
+                db.add(Settings(key=s_data["key"], value=s_data["value"]))
+            restored_counts["settings"] += 1
+
+        # Restore user profiles (only if user exists — don't create users from backup)
+        for u_data in data.get("users", []):
+            user = db.query(User).filter_by(telegram_id=u_data["telegram_id"]).first()
+            if user:
+                # Update profile fields only
+                if u_data.get("bio"):
+                    user.bio = u_data["bio"]
+                if u_data.get("avatar_emoji"):
+                    user.avatar_emoji = u_data["avatar_emoji"]
+                if u_data.get("display_name"):
+                    user.display_name = u_data["display_name"]
+                if u_data.get("badges"):
+                    user.badges = u_data["badges"]
+                if u_data.get("title"):
+                    user.title = u_data["title"]
+                if u_data.get("custom_limit") is not None:
+                    user.custom_limit = u_data["custom_limit"]
+                restored_counts["users"] += 1
+
+        db.commit()
+        flash(
+            f"✅ Restore complete! Plans: {restored_counts['plans']}, "
+            f"Users updated: {restored_counts['users']}, "
+            f"Settings: {restored_counts['settings']}",
+            "success",
+        )
+    except Exception as e:
+        db.rollback()
+        flash(f"Restore error: {e}", "danger")
+    finally:
+        db.close()
+
+    return redirect(url_for("backup_page"))
 
 
 # ===== RAZORPAY WEBHOOK (unchanged logic) =====

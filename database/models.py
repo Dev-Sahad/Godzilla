@@ -30,8 +30,8 @@ class User(Base):
     first_name = Column(String(100))
     is_banned = Column(Boolean, default=False)
     is_premium = Column(Boolean, default=False)
-    subscription_expires_at = Column(DateTime, nullable=True)   # When premium ends
-    subscription_plan = Column(String(50), nullable=True)       # e.g. "monthly"
+    subscription_expires_at = Column(DateTime, nullable=True)
+    subscription_plan = Column(String(50), nullable=True)
     auto_renew = Column(Boolean, default=False)
     downloads_today = Column(Integer, default=0)
     total_downloads = Column(Integer, default=0)
@@ -39,8 +39,16 @@ class User(Base):
     joined_at = Column(DateTime, default=datetime.utcnow)
     referred_by = Column(BigInteger, nullable=True)
     referral_count = Column(Integer, default=0)
-    referral_reward_claimed = Column(Boolean, default=False)   # Got 7-day bonus?
-    custom_limit = Column(Integer, nullable=True)              # Admin-set daily limit override
+    referral_reward_claimed = Column(Boolean, default=False)
+    custom_limit = Column(Integer, nullable=True)
+
+    # === PROFILE FIELDS (NEW in v3.3) ===
+    bio = Column(Text, default="")                          # User's bio/about
+    avatar_emoji = Column(String(10), default="🦖")         # Profile emoji
+    display_name = Column(String(100), nullable=True)       # Custom display name
+    badges = Column(Text, default="")                       # JSON list of earned badges
+    reputation = Column(Integer, default=0)                 # Points earned
+    title = Column(String(50), default="")                  # e.g. "Beta Tester", "OG"
 
     downloads = relationship("Download", back_populates="user", cascade="all, delete")
     favorites = relationship("Favorite", back_populates="user", cascade="all, delete")
@@ -191,7 +199,39 @@ class UserState(Base):
 def init_db():
     """Create all tables and seed defaults."""
     Base.metadata.create_all(bind=engine)
+    run_migrations()
     seed_defaults()
+
+
+def run_migrations():
+    """Safe migrations — add new columns to existing tables if missing."""
+    from sqlalchemy import inspect, text
+
+    inspector = inspect(engine)
+
+    migrations = [
+        # (table, column, sql_type_and_default)
+        ("users", "bio", "TEXT DEFAULT ''"),
+        ("users", "avatar_emoji", "VARCHAR(10) DEFAULT '🦖'"),
+        ("users", "display_name", "VARCHAR(100)"),
+        ("users", "badges", "TEXT DEFAULT ''"),
+        ("users", "reputation", "INTEGER DEFAULT 0"),
+        ("users", "title", "VARCHAR(50) DEFAULT ''"),
+        ("users", "custom_limit", "INTEGER"),
+        ("subscription_plans", "category", "VARCHAR(50) DEFAULT 'premium'"),
+        ("subscription_plans", "badge", "VARCHAR(50) DEFAULT ''"),
+    ]
+
+    with engine.begin() as conn:
+        for table, column, col_def in migrations:
+            try:
+                existing_cols = [c["name"] for c in inspector.get_columns(table)]
+                if column not in existing_cols:
+                    conn.execute(text(f"ALTER TABLE {table} ADD COLUMN {column} {col_def}"))
+                    print(f"✅ Migration: added {table}.{column}")
+            except Exception as e:
+                # Column might already exist or table missing — safe to skip
+                pass
 
 
 def seed_defaults():
