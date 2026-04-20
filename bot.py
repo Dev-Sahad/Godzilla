@@ -56,26 +56,36 @@ logger = logging.getLogger(__name__)
 
 async def post_init(app: Application):
     """Set up bot after initialization."""
-    # Register command menu in Telegram
+    # Register command menu in Telegram (user-facing only — no admin)
     commands = [
         BotCommand("start", "🦖 Start the bot"),
         BotCommand("help", "📖 Show help menu"),
         BotCommand("info", "🪪 Bot info & stats"),
-        BotCommand("history", "📚 Your downloads"),
-        BotCommand("favorites", "⭐ Saved links"),
-        BotCommand("quality", "🎬 Set default quality"),
-        BotCommand("subscribe", "💎 Get Premium"),
-        BotCommand("myplan", "📋 Check your plan"),
+        BotCommand("about", "👨‍💻 About GODZILLA"),
+        BotCommand("ping", "⚡ Check bot speed"),
+        BotCommand("profile", "👤 View your profile"),
+        BotCommand("setbio", "📝 Set your bio"),
+        BotCommand("setname", "✏️ Set display name"),
+        BotCommand("setemoji", "😀 Change avatar emoji"),
+        BotCommand("badges", "🏆 View all badges"),
+        BotCommand("history", "📚 Your download history"),
+        BotCommand("favorites", "⭐ Saved favorite links"),
+        BotCommand("fav", "⭐ Add link to favorites"),
+        BotCommand("unfav", "❌ Remove from favorites"),
+        BotCommand("quality", "🎬 Set default video quality"),
+        BotCommand("thumb", "🖼️ Get video thumbnail"),
+        BotCommand("subscribe", "💎 Get Premium plans"),
+        BotCommand("plans", "💰 View subscription plans"),
+        BotCommand("myplan", "📋 Check your plan status"),
+        BotCommand("cancel", "🚫 Cancel subscription"),
         BotCommand("referral", "🎁 Referral program"),
-        BotCommand("limit", "📊 Daily usage"),
+        BotCommand("limit", "📊 Check daily usage"),
         BotCommand("qr", "🔲 Generate QR code"),
-        BotCommand("short", "🔗 Shorten URL"),
+        BotCommand("short", "🔗 Shorten a URL"),
         BotCommand("tr", "🌐 Translate text"),
-        BotCommand("ping", "⚡ Check speed"),
-        BotCommand("about", "👨‍💻 About"),
     ]
     await app.bot.set_my_commands(commands)
-    logger.info("✅ Command menu registered with Telegram")
+    logger.info(f"✅ Command menu registered with Telegram ({len(commands)} commands)")
 
     # Store start time in bot_data for uptime tracking
     app.bot_data["start_time"] = time.time()
