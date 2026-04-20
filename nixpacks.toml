@@ -1,8 +1,11 @@
 [phases.setup]
-nixPkgs = ["python311", "ffmpeg", "gcc", "libpq"]
+nixPkgs = ["python311", "ffmpeg", "gcc"]
 
 [phases.install]
-cmds = ["pip install -r requirements.txt"]
+cmds = [
+    "python -m venv --copies /opt/venv",
+    ". /opt/venv/bin/activate && pip install -r requirements.txt"
+]
 
 [start]
-cmd = "python bot.py"
+cmd = ". /opt/venv/bin/activate && python bot.py"
