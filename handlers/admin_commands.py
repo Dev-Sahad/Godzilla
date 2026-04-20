@@ -4,23 +4,38 @@ from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes
 from telegram.error import TelegramError
 
-from config import ADMIN_IDS, WEB_PANEL_URL
+from config import WEB_PANEL_URL
 from database import (
     get_stats, get_all_users, ban_user, unban_user,
     get_recent_logs, set_premium
+)
+from database.helpers import (
+    is_bot_admin, is_super_admin, add_sub_admin, remove_sub_admin,
+    list_sub_admins, get_all_admin_ids,
 )
 from utils import notify_admin_action
 
 
 def is_admin(user_id):
-    """Check if user is admin."""
-    return user_id in ADMIN_IDS
+    """Check if user is admin (super or sub)."""
+    return is_bot_admin(user_id)
 
 
 async def admin_only(update: Update):
     """Check admin permissions."""
     if not is_admin(update.effective_user.id):
         await update.message.reply_text("🚫 *Admin only.*", parse_mode="Markdown")
+        return False
+    return True
+
+
+async def super_admin_only(update: Update):
+    """Check super-admin permissions."""
+    if not is_super_admin(update.effective_user.id):
+        await update.message.reply_text(
+            "🚫 *Super-admin only.*\n\nThis command requires super-admin rights.",
+            parse_mode="Markdown",
+        )
         return False
     return True
 
@@ -159,7 +174,7 @@ async def ban_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("❌ Invalid user ID.")
         return
 
-    if target_id in ADMIN_IDS:
+    if is_bot_admin(target_id):
         await update.message.reply_text("🚫 Cannot ban an admin.")
         return
 
@@ -259,6 +274,9 @@ async def admin_help_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not await admin_only(update):
         return
 
+    user_id = update.effective_user.id
+    is_super = is_super_admin(user_id)
+
     text = (
         "🛠 *GODZILLA — Admin Panel*\n\n"
         "*🌐 Web Control Panel*\n"
@@ -276,9 +294,20 @@ async def admin_help_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "*💰 Payments*\n"
         "/pending — List pending payments\n"
         "/approve <id> — Approve payment\n"
-        "/reject <id> — Reject payment\n\n"
-        "_🔐 Admin access only_"
+        "/reject <id> — Reject payment\n"
     )
+
+    if is_super:
+        text += (
+            "\n*👑 SUPER ADMIN — Team Management*\n"
+            "/admins — List all admins\n"
+            "/addadmin <user\\_id> — Promote user to sub-admin\n"
+            "/deladmin <user\\_id> — Remove sub-admin\n"
+            "\n_🔐 You are a SUPER admin_"
+        )
+    else:
+        text += "\n_🔐 You are a sub-admin_"
+
     await update.message.reply_text(text, parse_mode="Markdown")
 
 
@@ -354,3 +383,156 @@ async def setlimit_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     finally:
         session.close()
 
+
+
+
+# ===== SUB-ADMIN MANAGEMENT (Super-admin only) =====
+
+async def addadmin_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Super admin: /addadmin <telegram_id> [username] — promote user to sub-admin."""
+    from handlers.admin_mgmt import add_subadmin, set_menu_for_user
+
+    user_id = update.effective_user.id
+    if not await super_admin_only(update):
+        return
+
+    if not context.args:
+        await update.message.reply_text(
+            "*Usage:* `/addadmin <telegram_id> [username]`\n\n"
+            "*Example:* `/addadmin 123456789 sahad_admin`\n\n"
+            "Sub-admins get:\n"
+            "✓ All admin commands in Telegram\n"
+            "✓ Admin command menu (scoped)\n"
+            "✗ Cannot add/remove other admins\n"
+            "✗ Cannot change super-admin settings",
+            parse_mode="Markdown",
+        )
+        return
+
+    try:
+        target_id = int(context.args[0])
+    except ValueError:
+        await update.message.reply_text("❌ Invalid Telegram ID.")
+        return
+
+    username = context.args[1] if len(context.args) > 1 else None
+
+    success, message = add_subadmin(target_id, username, added_by=user_id)
+
+    if success:
+        # Update their command menu to admin menu
+        try:
+            await set_menu_for_user(context.bot, target_id)
+        except Exception as e:
+            pass
+
+        # Notify the new sub-admin
+        try:
+            await context.bot.send_message(
+                chat_id=target_id,
+                text=(
+                    "🎉 *You've been promoted to ADMIN!*\n\n"
+                    "You now have access to admin commands.\n"
+                    "Restart the bot chat to see the new commands menu.\n\n"
+                    "Use /admin to see the full admin panel."
+                ),
+                parse_mode="Markdown",
+            )
+        except Exception:
+            pass
+
+        await update.message.reply_text(message, parse_mode="Markdown")
+        await notify_admin_action(
+            user_id, "Sub-admin Added", f"New admin: {target_id}"
+        )
+    else:
+        await update.message.reply_text(f"❌ {message}", parse_mode="Markdown")
+
+
+async def deladmin_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Super admin: /deladmin <telegram_id> — remove sub-admin."""
+    from handlers.admin_mgmt import remove_subadmin, set_menu_for_user
+
+    user_id = update.effective_user.id
+    if not await super_admin_only(update):
+        return
+
+    if not context.args:
+        await update.message.reply_text(
+            "*Usage:* `/deladmin <telegram_id>`\n\n"
+            "Removes a sub-admin. Super-admins cannot be removed (set in `.env`).",
+            parse_mode="Markdown",
+        )
+        return
+
+    try:
+        target_id = int(context.args[0])
+    except ValueError:
+        await update.message.reply_text("❌ Invalid Telegram ID.")
+        return
+
+    success, message = remove_subadmin(target_id, removed_by=user_id)
+
+    if success:
+        # Reset their command menu to user menu
+        try:
+            await set_menu_for_user(context.bot, target_id)
+        except Exception:
+            pass
+
+        # Notify the user
+        try:
+            await context.bot.send_message(
+                chat_id=target_id,
+                text=(
+                    "ℹ️ *Admin access removed*\n\n"
+                    "Your admin privileges have been revoked."
+                ),
+                parse_mode="Markdown",
+            )
+        except Exception:
+            pass
+
+        await update.message.reply_text(message, parse_mode="Markdown")
+        await notify_admin_action(
+            user_id, "Sub-admin Removed", f"Removed: {target_id}"
+        )
+    else:
+        await update.message.reply_text(f"❌ {message}", parse_mode="Markdown")
+
+
+async def admins_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """List all admins (super + sub). Admin-only."""
+    from handlers.admin_mgmt import list_all_admins
+
+    if not await admin_only(update):
+        return
+
+    admins = list_all_admins()
+    text = "👑 *GODZILLA Admin Team*\n━━━━━━━━━━━━━━━\n\n"
+
+    super_admins = [a for a in admins if a["type"] == "super"]
+    sub_admins = [a for a in admins if a["type"] == "sub"]
+
+    if super_admins:
+        text += f"*👑 SUPER ADMINS ({len(super_admins)})*\n"
+        text += "_(Set in .env ADMIN_IDS — immutable)_\n"
+        for a in super_admins:
+            text += f"• `{a['telegram_id']}`\n"
+        text += "\n"
+
+    if sub_admins:
+        text += f"*⚡ SUB-ADMINS ({len(sub_admins)})*\n"
+        for a in sub_admins:
+            name = a["username"] or a["first_name"] or "—"
+            text += f"• `{a['telegram_id']}` ({name})\n"
+            if is_super_admin(update.effective_user.id):
+                text += f"  _Remove:_ `/deladmin {a['telegram_id']}`\n"
+        text += "\n"
+    else:
+        text += "_No sub-admins yet._\n\n"
+
+    if is_super_admin(update.effective_user.id):
+        text += "💡 Use `/addadmin <user_id>` to promote a new sub-admin."
+
+    await update.message.reply_text(text, parse_mode="Markdown")

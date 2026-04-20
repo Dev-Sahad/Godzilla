@@ -317,3 +317,105 @@ def set_premium(telegram_id, status=True):
         return False
     finally:
         session.close()
+
+
+# ===== ADMIN MANAGEMENT (v3.4) =====
+
+def is_super_admin(telegram_id):
+    """Check if user is a super admin (from env ADMIN_IDS)."""
+    from config import SUPER_ADMIN_IDS
+    return int(telegram_id) in SUPER_ADMIN_IDS
+
+
+def is_bot_admin(telegram_id):
+    """Check if user is any kind of admin (super OR sub-admin)."""
+    from config import SUPER_ADMIN_IDS
+    from database.models import BotAdmin
+
+    if int(telegram_id) in SUPER_ADMIN_IDS:
+        return True
+
+    session = get_session()
+    try:
+        return session.query(BotAdmin).filter_by(telegram_id=telegram_id).first() is not None
+    finally:
+        session.close()
+
+
+def get_all_admin_ids():
+    """Get list of ALL admin telegram IDs (super + sub)."""
+    from config import SUPER_ADMIN_IDS
+    from database.models import BotAdmin
+
+    admins = set(SUPER_ADMIN_IDS)
+    session = get_session()
+    try:
+        subs = session.query(BotAdmin).all()
+        for s in subs:
+            admins.add(int(s.telegram_id))
+    except Exception:
+        pass
+    finally:
+        session.close()
+    return list(admins)
+
+
+def add_sub_admin(telegram_id, username, first_name, promoted_by, notes=""):
+    """Add a sub-admin. Returns (success, message)."""
+    from database.models import BotAdmin
+    from config import SUPER_ADMIN_IDS
+
+    if int(telegram_id) in SUPER_ADMIN_IDS:
+        return False, "User is already a super admin."
+
+    session = get_session()
+    try:
+        existing = session.query(BotAdmin).filter_by(telegram_id=telegram_id).first()
+        if existing:
+            return False, "User is already a sub-admin."
+
+        admin = BotAdmin(
+            telegram_id=telegram_id,
+            username=username,
+            first_name=first_name,
+            promoted_by=promoted_by,
+            notes=notes,
+        )
+        session.add(admin)
+        session.commit()
+        return True, "Sub-admin added successfully."
+    except Exception as e:
+        session.rollback()
+        return False, f"Error: {e}"
+    finally:
+        session.close()
+
+
+def remove_sub_admin(telegram_id):
+    """Remove a sub-admin. Returns (success, message)."""
+    from database.models import BotAdmin
+
+    session = get_session()
+    try:
+        admin = session.query(BotAdmin).filter_by(telegram_id=telegram_id).first()
+        if not admin:
+            return False, "User is not a sub-admin."
+        session.delete(admin)
+        session.commit()
+        return True, "Sub-admin removed."
+    except Exception as e:
+        session.rollback()
+        return False, f"Error: {e}"
+    finally:
+        session.close()
+
+
+def list_sub_admins():
+    """Get list of all sub-admins."""
+    from database.models import BotAdmin
+
+    session = get_session()
+    try:
+        return session.query(BotAdmin).order_by(BotAdmin.created_at.desc()).all()
+    finally:
+        session.close()

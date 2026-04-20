@@ -22,7 +22,6 @@ from telegram.ext import ContextTypes
 
 from config import (
     UPI_ID, UPI_NAME, UPI_QR_FILENAME, MAX_PENDING_PER_USER,
-    ADMIN_IDS,
 )
 from database.models import (
     get_session, User, PaymentRequest, UserState, SubscriptionPlan,
@@ -30,6 +29,7 @@ from database.models import (
 from database import get_or_create_user
 from utils.payments import get_plans, get_plan, activate_premium
 from utils import notify_admin_action
+from database.helpers import is_bot_admin, get_all_admin_ids
 
 logger = logging.getLogger(__name__)
 
@@ -445,7 +445,7 @@ async def notify_admins_new_payment(context, req_id, user, plan_key, amount, utr
         ]
     ]
 
-    for admin_id in ADMIN_IDS:
+    for admin_id in get_all_admin_ids():
         try:
             await context.bot.send_message(
                 chat_id=admin_id,
@@ -464,7 +464,7 @@ async def approval_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     admin_id = query.from_user.id
 
-    if admin_id not in ADMIN_IDS:
+    if not is_bot_admin(admin_id):
         await query.answer("🚫 Admin only!", show_alert=True)
         return
 
@@ -600,7 +600,7 @@ async def process_decision(context, query_or_msg, req_id, action, admin_id):
 async def approve_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Admin command: /approve <user_id or request_id>."""
     user_id = update.effective_user.id
-    if user_id not in ADMIN_IDS:
+    if not is_bot_admin(user_id):
         await update.message.reply_text("🚫 *Admin only.*", parse_mode="Markdown")
         return
 
@@ -644,7 +644,7 @@ async def approve_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def reject_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Admin command: /reject <user_id or request_id>."""
     user_id = update.effective_user.id
-    if user_id not in ADMIN_IDS:
+    if not is_bot_admin(user_id):
         await update.message.reply_text("🚫 *Admin only.*", parse_mode="Markdown")
         return
 
@@ -685,7 +685,7 @@ async def reject_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def pending_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Admin command: /pending — list all pending payments."""
     user_id = update.effective_user.id
-    if user_id not in ADMIN_IDS:
+    if not is_bot_admin(user_id):
         await update.message.reply_text("🚫 *Admin only.*", parse_mode="Markdown")
         return
 

@@ -1,6 +1,6 @@
 """
 GODZILLA BOT v3.0.0 - ULTRA EDITION
-Developer: @Sxhd_Sha
+Developer: Sxhd
 Community: SHA COMMUNITY
 
 Main entry point — registers all handlers and starts the bot.
@@ -25,7 +25,8 @@ from handlers.user_commands import (
 )
 from handlers.admin_commands import (
     stats_cmd, broadcast_cmd, ban_cmd, unban_cmd,
-    logs_cmd, premium_cmd, admin_help_cmd, admin_panel_cmd, setlimit_cmd
+    logs_cmd, premium_cmd, admin_help_cmd, admin_panel_cmd, setlimit_cmd,
+    addadmin_cmd, deladmin_cmd, admins_cmd,
 )
 from handlers.download_handler import (
     handle_url, download_callback, quality_cmd,
@@ -44,7 +45,7 @@ from handlers.profile import (
     badges_cmd,
 )
 from admin_panel import start_server_in_thread, set_bot_app
-from config import WEB_PANEL_URL, ADMIN_IDS
+from config import WEB_PANEL_URL
 
 
 logging.basicConfig(
@@ -56,36 +57,18 @@ logger = logging.getLogger(__name__)
 
 async def post_init(app: Application):
     """Set up bot after initialization."""
-    # Register command menu in Telegram (user-facing only — no admin)
-    commands = [
-        BotCommand("start", "🦖 Start the bot"),
-        BotCommand("help", "📖 Show help menu"),
-        BotCommand("info", "🪪 Bot info & stats"),
-        BotCommand("about", "👨‍💻 About GODZILLA"),
-        BotCommand("ping", "⚡ Check bot speed"),
-        BotCommand("profile", "👤 View your profile"),
-        BotCommand("setbio", "📝 Set your bio"),
-        BotCommand("setname", "✏️ Set display name"),
-        BotCommand("setemoji", "😀 Change avatar emoji"),
-        BotCommand("badges", "🏆 View all badges"),
-        BotCommand("history", "📚 Your download history"),
-        BotCommand("favorites", "⭐ Saved favorite links"),
-        BotCommand("fav", "⭐ Add link to favorites"),
-        BotCommand("unfav", "❌ Remove from favorites"),
-        BotCommand("quality", "🎬 Set default video quality"),
-        BotCommand("thumb", "🖼️ Get video thumbnail"),
-        BotCommand("subscribe", "💎 Get Premium plans"),
-        BotCommand("plans", "💰 View subscription plans"),
-        BotCommand("myplan", "📋 Check your plan status"),
-        BotCommand("cancel", "🚫 Cancel subscription"),
-        BotCommand("referral", "🎁 Referral program"),
-        BotCommand("limit", "📊 Check daily usage"),
-        BotCommand("qr", "🔲 Generate QR code"),
-        BotCommand("short", "🔗 Shorten a URL"),
-        BotCommand("tr", "🌐 Translate text"),
-    ]
-    await app.bot.set_my_commands(commands)
-    logger.info(f"✅ Command menu registered with Telegram ({len(commands)} commands)")
+    from handlers.admin_mgmt import USER_COMMANDS, refresh_all_admin_menus
+
+    # Default commands menu (for regular users)
+    await app.bot.set_my_commands(USER_COMMANDS)
+    logger.info(f"✅ Default user menu registered ({len(USER_COMMANDS)} commands)")
+
+    # Set admin-specific menus for all admins (super + sub)
+    try:
+        count = await refresh_all_admin_menus(app.bot)
+        logger.info(f"✅ Admin menus refreshed for {count} admins")
+    except Exception as e:
+        logger.error(f"Admin menu refresh error: {e}")
 
     # Store start time in bot_data for uptime tracking
     app.bot_data["start_time"] = time.time()
@@ -191,6 +174,11 @@ def main():
     app.add_handler(CommandHandler("logs", logs_cmd))
     app.add_handler(CommandHandler("premium", premium_cmd))
     app.add_handler(CommandHandler("setlimit", setlimit_cmd))
+
+    # ===== SUPER ADMIN — SUB-ADMIN MANAGEMENT (v3.4) =====
+    app.add_handler(CommandHandler("addadmin", addadmin_cmd))
+    app.add_handler(CommandHandler("deladmin", deladmin_cmd))
+    app.add_handler(CommandHandler("admins", admins_cmd))
 
     # ===== UTILITY COMMANDS =====
     app.add_handler(CommandHandler("qr", qr_cmd))

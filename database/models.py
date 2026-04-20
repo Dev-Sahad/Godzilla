@@ -154,6 +154,19 @@ class AdminUser(Base):
     telegram_id = Column(BigInteger, nullable=True)
     is_superadmin = Column(Boolean, default=False)
     last_login = Column(DateTime, nullable=True)
+
+
+class BotAdmin(Base):
+    """Sub-admins promoted by super-admins (Telegram side admins)."""
+    __tablename__ = "bot_admins"
+
+    id = Column(Integer, primary_key=True)
+    telegram_id = Column(BigInteger, unique=True, index=True, nullable=False)
+    username = Column(String(100), nullable=True)
+    first_name = Column(String(100), nullable=True)
+    promoted_by = Column(BigInteger, nullable=False)  # telegram_id of super admin who promoted
+    role = Column(String(50), default="admin")         # admin, moderator (future use)
+    notes = Column(Text, default="")
     created_at = Column(DateTime, default=datetime.utcnow)
 
 

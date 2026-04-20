@@ -9,14 +9,21 @@ load_dotenv()
 # ===== BOT INFO =====
 BOT_NAME = "GODZILLA"
 BOT_VERSION = "3.0.0"
-BOT_OWNER = "@Sxhd_Sha"
+BOT_OWNER = "Sxhd"
 BOT_COMMUNITY = "SHA COMMUNITY"
 BOT_BORN = "2025"
 BOT_PREFIX = "/"
 
 # ===== CREDENTIALS (from .env) =====
 BOT_TOKEN = os.getenv("BOT_TOKEN")
-ADMIN_IDS = [int(x) for x in os.getenv("ADMIN_IDS", "").split(",") if x.strip()]
+
+# Super-admins from env (cannot be removed, can promote others)
+SUPER_ADMIN_IDS = [int(x) for x in os.getenv("ADMIN_IDS", "").split(",") if x.strip()]
+
+# ADMIN_IDS dynamically combines SUPER_ADMIN_IDS + sub_admins from database
+# Use get_admin_ids() from database.helpers to get current full list
+ADMIN_IDS = SUPER_ADMIN_IDS[:]  # Fallback when DB not yet loaded
+
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///godzilla.db")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 DISCORD_WEBHOOK_URL = os.getenv("DISCORD_WEBHOOK_URL", "")
