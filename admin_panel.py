@@ -585,42 +585,69 @@ def change_password():
 def analytics():
     """Analytics dashboard with charts."""
     db = get_session()
+
+    # Default empty stats — prevents template errors if queries fail
+    stats = {
+        "week_downloads": [],
+        "platform_stats": {},
+        "growth": [],
+        "top_users": [],
+        "total_revenue": 0,
+        "success_rate": 0,
+        "total_downloads": 0,
+    }
+
     try:
         from sqlalchemy import func, text
 
         # Last 7 days downloads
-        week_downloads = []
-        for i in range(6, -1, -1):
-            day = datetime.utcnow().date() - timedelta(days=i)
-            count = db.query(Download).filter(
-                func.date(Download.created_at) == day
-            ).count()
-            week_downloads.append({"date": day.strftime("%b %d"), "count": count})
+        try:
+            week_downloads = []
+            for i in range(6, -1, -1):
+                day = datetime.utcnow().date() - timedelta(days=i)
+                count = db.query(Download).filter(
+                    func.date(Download.created_at) == day
+                ).count()
+                week_downloads.append({"date": day.strftime("%b %d"), "count": count})
+            stats["week_downloads"] = week_downloads
+        except Exception as e:
+            logger.error(f"Analytics week_downloads error: {e}")
 
         # Platform breakdown
-        platform_stats = {}
-        rows = db.query(Download.platform, func.count(Download.id)).group_by(Download.platform).all()
-        for platform, count in rows:
-            if platform:
-                platform_stats[platform] = count
+        try:
+            platform_stats = {}
+            rows = db.query(Download.platform, func.count(Download.id)).group_by(Download.platform).all()
+            for platform, count in rows:
+                if platform:
+                    platform_stats[platform] = count
+            stats["platform_stats"] = platform_stats
+        except Exception as e:
+            logger.error(f"Analytics platform error: {e}")
 
         # User growth (last 30 days)
-        growth = []
-        for i in range(29, -1, -1):
-            day = datetime.utcnow().date() - timedelta(days=i)
-            count = db.query(User).filter(func.date(User.created_at) == day).count()
-            growth.append({"date": day.strftime("%b %d"), "count": count})
+        try:
+            growth = []
+            for i in range(29, -1, -1):
+                day = datetime.utcnow().date() - timedelta(days=i)
+                count = db.query(User).filter(func.date(User.created_at) == day).count()
+                growth.append({"date": day.strftime("%b %d"), "count": count})
+            stats["growth"] = growth
+        except Exception as e:
+            logger.error(f"Analytics growth error: {e}")
 
         # Top users by downloads
-        top_users_raw = (
-            db.query(User, func.count(Download.id).label("dl_count"))
-            .join(Download)
-            .group_by(User.id)
-            .order_by(text("dl_count DESC"))
-            .limit(10)
-            .all()
-        )
-        top_users = [{"user": u, "count": c} for u, c in top_users_raw]
+        try:
+            top_users_raw = (
+                db.query(User, func.count(Download.id).label("dl_count"))
+                .join(Download)
+                .group_by(User.id)
+                .order_by(text("dl_count DESC"))
+                .limit(10)
+                .all()
+            )
+            stats["top_users"] = [{"user": u, "count": c} for u, c in top_users_raw]
+        except Exception as e:
+            logger.error(f"Analytics top_users error: {e}")
 
         # Revenue (from approved payment requests)
         try:
@@ -628,26 +655,26 @@ def analytics():
             total_revenue = db.query(func.sum(PaymentRequest.amount)).filter(
                 PaymentRequest.status == "approved"
             ).scalar() or 0
-        except Exception:
-            total_revenue = 0
+            stats["total_revenue"] = total_revenue
+        except Exception as e:
+            logger.error(f"Analytics revenue error: {e}")
 
         # Success rate
-        total_dls = db.query(Download).count()
-        success_dls = db.query(Download).filter_by(status="success").count()
-        success_rate = round((success_dls / total_dls * 100) if total_dls else 0, 1)
+        try:
+            total_dls = db.query(Download).count()
+            success_dls = db.query(Download).filter_by(status="success").count()
+            stats["total_downloads"] = total_dls
+            stats["success_rate"] = round((success_dls / total_dls * 100) if total_dls else 0, 1)
+        except Exception as e:
+            logger.error(f"Analytics success rate error: {e}")
 
-        stats = {
-            "week_downloads": week_downloads,
-            "platform_stats": platform_stats,
-            "growth": growth,
-            "top_users": top_users,
-            "total_revenue": total_revenue,
-            "success_rate": success_rate,
-            "total_downloads": total_dls,
-        }
-        return render_template("analytics.html", stats=stats)
+    except Exception as e:
+        logger.error(f"Analytics critical error: {e}")
+        flash(f"Some stats unavailable: {e}", "warning")
     finally:
         db.close()
+
+    return render_template("analytics.html", stats=stats)
 
 
 # ===== REFERRALS =====
@@ -657,39 +684,35 @@ def analytics():
 def referrals():
     """Referral program overview."""
     db = get_session()
+    top_referrers = []
+    recent_refs = []
+    total_referrals = 0
+    total_referrers = 0
     try:
-        from sqlalchemy import func, desc
-
-        # Top referrers
+        from sqlalchemy import desc
         top_referrers = (
-            db.query(User)
-            .filter(User.referral_count > 0)
-            .order_by(desc(User.referral_count))
-            .limit(50)
-            .all()
+            db.query(User).filter(User.referral_count > 0)
+            .order_by(desc(User.referral_count)).limit(50).all()
         )
-
-        # Recent referrals
         recent_refs = (
-            db.query(User)
-            .filter(User.referred_by.isnot(None))
-            .order_by(desc(User.created_at))
-            .limit(30)
-            .all()
+            db.query(User).filter(User.referred_by.isnot(None))
+            .order_by(desc(User.created_at)).limit(30).all()
         )
-
         total_referrals = db.query(User).filter(User.referred_by.isnot(None)).count()
         total_referrers = db.query(User).filter(User.referral_count > 0).count()
-
-        return render_template(
-            "referrals.html",
-            top_referrers=top_referrers,
-            recent_refs=recent_refs,
-            total_referrals=total_referrals,
-            total_referrers=total_referrers,
-        )
+    except Exception as e:
+        logger.error(f"Referrals error: {e}")
+        flash(f"Error loading referrals: {e}", "warning")
     finally:
         db.close()
+
+    return render_template(
+        "referrals.html",
+        top_referrers=top_referrers,
+        recent_refs=recent_refs,
+        total_referrals=total_referrals,
+        total_referrers=total_referrers,
+    )
 
 
 # ===== ACTIVITY FEED =====
@@ -699,19 +722,29 @@ def referrals():
 def activity():
     """Real-time activity feed: users, downloads, logins."""
     db = get_session()
+    recent_users = []
+    recent_downloads = []
+    recent_logs = []
     try:
         recent_users = db.query(User).order_by(User.created_at.desc()).limit(20).all()
+    except Exception as e:
+        logger.error(f"Activity users error: {e}")
+    try:
         recent_downloads = db.query(Download).order_by(Download.created_at.desc()).limit(30).all()
+    except Exception as e:
+        logger.error(f"Activity downloads error: {e}")
+    try:
         recent_logs = db.query(Log).order_by(Log.created_at.desc()).limit(20).all()
+    except Exception as e:
+        logger.error(f"Activity logs error: {e}")
+    db.close()
 
-        return render_template(
-            "activity.html",
-            recent_users=recent_users,
-            recent_downloads=recent_downloads,
-            recent_logs=recent_logs,
-        )
-    finally:
-        db.close()
+    return render_template(
+        "activity.html",
+        recent_users=recent_users,
+        recent_downloads=recent_downloads,
+        recent_logs=recent_logs,
+    )
 
 
 # ===== PAYMENT REQUESTS (UPI) =====

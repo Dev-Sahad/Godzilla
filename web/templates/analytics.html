@@ -36,13 +36,21 @@
 <!-- Downloads Chart -->
 <div class="card p-4 mb-4">
     <h5 class="mb-3">📥 Downloads — Last 7 Days</h5>
-    <canvas id="downloadsChart" height="80"></canvas>
+    {% if stats.week_downloads %}
+        <canvas id="downloadsChart" height="80"></canvas>
+    {% else %}
+        <p class="text-muted">No download data yet.</p>
+    {% endif %}
 </div>
 
 <!-- Growth Chart -->
 <div class="card p-4 mb-4">
     <h5 class="mb-3">📈 User Growth — Last 30 Days</h5>
-    <canvas id="growthChart" height="80"></canvas>
+    {% if stats.growth %}
+        <canvas id="growthChart" height="80"></canvas>
+    {% else %}
+        <p class="text-muted">No user data yet.</p>
+    {% endif %}
 </div>
 
 <div class="row g-3">
@@ -104,6 +112,7 @@
 {% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
+{% if stats.week_downloads %}
 const dlData = {
     labels: {{ stats.week_downloads | map(attribute='date') | list | tojson }},
     datasets: [{
@@ -120,7 +129,9 @@ new Chart(document.getElementById('downloadsChart'), {
     options: { plugins: { legend: { labels: { color: '#e0e0e0' } } },
     scales: { x: { ticks: { color: '#888' } }, y: { ticks: { color: '#888' }, beginAtZero: true } } }
 });
+{% endif %}
 
+{% if stats.growth %}
 const growthData = {
     labels: {{ stats.growth | map(attribute='date') | list | tojson }},
     datasets: [{
@@ -134,5 +145,6 @@ new Chart(document.getElementById('growthChart'), {
     options: { plugins: { legend: { labels: { color: '#e0e0e0' } } },
     scales: { x: { ticks: { color: '#888' } }, y: { ticks: { color: '#888' }, beginAtZero: true } } }
 });
+{% endif %}
 </script>
 {% endblock %}
