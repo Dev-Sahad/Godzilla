@@ -231,7 +231,7 @@ async def download_thumbnail(url, user_id):
     return await _run_with_timeout(_sync, url_for_log=url)
 
 
-async def get_info(url):
+async def get_video_info(url):
     """Get video metadata without downloading (fast)."""
     ydl_opts = {
         "quiet": True,
