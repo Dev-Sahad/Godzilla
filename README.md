@@ -338,7 +338,7 @@ Just say "Continue to Phase 2" whenever you're ready!
 
 ## 📜 Credits
 
-- 💻 **Developer:** @Dev-Sahad
+- 💻 **Developer:** [![GitHub](https://img.shields.io/badge/GitHub-Dev--Sahad-0d1117?style=for-the-badge&logo=github&logoColor=white)](https://github.com/Dev-Sahad)
 - 🏠 **Community:** SHA COMMUNITY
 - 🧠 **AI Assistance:** Anthropic Claude
 - 🔧 **Libraries:** python-telegram-bot, yt-dlp, SQLAlchemy, aiohttp
