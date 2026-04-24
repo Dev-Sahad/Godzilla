@@ -1,45 +1,56 @@
 {% extends "base.html" %}
-{% block title %}Settings — GODZILLA{% endblock %}
+{% block title %}SETTINGS // GODZILLA{% endblock %}
 
 {% block content %}
-<h2><i class="bi bi-gear"></i> Bot Settings</h2>
+<div class="page-header">
+    <div>
+        <div class="breadcrumb-mono">SYSTEM / CONFIGURATION</div>
+        <h2>BOT SETTINGS</h2>
+    </div>
+</div>
 
-<div class="card p-4 mb-4">
+<div class="card" style="padding: 28px; max-width: 900px;">
     <form method="POST">
+        <div class="breadcrumb-mono" style="margin-bottom: 16px;">RUNTIME CONFIGURATION</div>
+
         <div class="mb-3">
-            <label class="form-label">Welcome Message (optional override)</label>
-            <textarea name="setting_welcome_message" rows="3" class="form-control bg-dark text-light">{{ settings.get('welcome_message', '') }}</textarea>
-            <small class="text-muted">Leave empty to use default. Supports Markdown.</small>
+            <label class="form-label">◦ Welcome Message Override</label>
+            <textarea name="setting_welcome_message" rows="3" class="form-control">{{ settings.get('welcome_message', '') }}</textarea>
+            <small class="font-mono" style="font-size: 10px; color: var(--text-muted); display: block; margin-top: 6px;">
+                // Leave empty for default. Supports Markdown: *bold*, _italic_, `code`
+            </small>
         </div>
 
         <div class="row g-3 mb-3">
             <div class="col-md-6">
-                <label class="form-label">Maintenance Mode</label>
-                <select name="setting_maintenance_mode" class="form-select bg-dark text-light">
-                    <option value="off" {% if settings.get('maintenance_mode', 'off') == 'off' %}selected{% endif %}>Off</option>
-                    <option value="on" {% if settings.get('maintenance_mode') == 'on' %}selected{% endif %}>On (bot replies maintenance notice)</option>
+                <label class="form-label">◦ Maintenance Mode</label>
+                <select name="setting_maintenance_mode" class="form-select">
+                    <option value="off" {% if settings.get('maintenance_mode', 'off') == 'off' %}selected{% endif %}>OFFLINE · BOT LIVE</option>
+                    <option value="on" {% if settings.get('maintenance_mode') == 'on' %}selected{% endif %}>ONLINE · MAINTENANCE NOTICE</option>
                 </select>
             </div>
             <div class="col-md-6">
-                <label class="form-label">Maintenance Message</label>
-                <input type="text" name="setting_maintenance_message" class="form-control bg-dark text-light"
+                <label class="form-label">◦ Maintenance Message</label>
+                <input type="text" name="setting_maintenance_message" class="form-control"
                        value="{{ settings.get('maintenance_message', '🔧 Bot under maintenance. Back soon!') }}">
             </div>
         </div>
 
-        <div class="mb-3">
-            <label class="form-label">Support Contact (shown in /help)</label>
-            <input type="text" name="setting_support_contact" class="form-control bg-dark text-light"
-                   value="{{ settings.get('support_contact', '@sxhd') }}">
+        <div class="mb-4">
+            <label class="form-label">◦ Support Contact (in /help)</label>
+            <input type="text" name="setting_support_contact" class="form-control"
+                   value="{{ settings.get('support_contact', '@sxhd') }}"
+                   placeholder="@your_telegram_username">
         </div>
 
-        <button type="submit" class="btn btn-godzilla fw-bold">
-            <i class="bi bi-check-circle"></i> Save Settings
+        <button type="submit" class="btn btn-godzilla">
+            <i class="bi bi-check-circle-fill"></i> SAVE CONFIGURATION
         </button>
     </form>
 </div>
 
-<div class="alert alert-warning">
-    <strong>⚠️ Note:</strong> These are runtime settings. Critical settings like <code>BOT_TOKEN</code>, <code>RAZORPAY_KEY_ID</code>, etc. must be changed in Railway environment variables.
+<div class="alert alert-warning mt-3">
+    <span class="font-mono" style="font-size: 10px; letter-spacing: 0.2em; color: var(--neon-amber);">!</span>
+    <strong>IMMUTABLE CONFIG:</strong> Critical settings like <code>BOT_TOKEN</code>, <code>DATABASE_URL</code>, <code>ADMIN_IDS</code> must be changed in Railway environment variables.
 </div>
 {% endblock %}

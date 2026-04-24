@@ -1,108 +1,123 @@
 {% extends "base.html" %}
-{% block title %}Analytics — GODZILLA{% endblock %}
+{% block title %}ANALYTICS // GODZILLA{% endblock %}
 
 {% block content %}
-<h2><i class="bi bi-graph-up"></i> Analytics</h2>
-<p class="text-muted mb-4">Track growth, downloads, and revenue insights.</p>
+<div class="page-header">
+    <div>
+        <div class="breadcrumb-mono">SYSTEM / OVERVIEW / ANALYTICS</div>
+        <h2>INTELLIGENCE DASHBOARD</h2>
+    </div>
+</div>
 
 <!-- Top Stats -->
 <div class="row g-3 mb-4">
-    <div class="col-md-3">
-        <div class="stat-card p-3">
-            <div class="stat-label">Total Downloads</div>
+    <div class="col-md-3 col-6">
+        <div class="stat-card">
+            <div class="stat-label"><i class="bi bi-arrow-down-circle-fill"></i> TOTAL DOWNLOADS</div>
             <div class="stat-value">{{ stats.total_downloads }}</div>
+            <div class="stat-delta">LIFETIME VOLUME</div>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="stat-card p-3">
-            <div class="stat-label">Success Rate</div>
+    <div class="col-md-3 col-6">
+        <div class="stat-card accent-cyan">
+            <div class="stat-label"><i class="bi bi-check-circle-fill"></i> SUCCESS RATE</div>
             <div class="stat-value">{{ stats.success_rate }}%</div>
+            <div class="stat-delta">COMPLETION RATIO</div>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="stat-card p-3">
-            <div class="stat-label">Total Revenue</div>
+    <div class="col-md-3 col-6">
+        <div class="stat-card accent-amber">
+            <div class="stat-label"><i class="bi bi-cash-stack"></i> REVENUE</div>
             <div class="stat-value">₹{{ stats.total_revenue }}</div>
+            <div class="stat-delta">ALL-TIME EARNINGS</div>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="stat-card p-3">
-            <div class="stat-label">Platforms Used</div>
+    <div class="col-md-3 col-6">
+        <div class="stat-card accent-magenta">
+            <div class="stat-label"><i class="bi bi-globe"></i> PLATFORMS</div>
             <div class="stat-value">{{ stats.platform_stats|length }}</div>
+            <div class="stat-delta">ACTIVE SOURCES</div>
         </div>
     </div>
 </div>
 
-<!-- Downloads Chart -->
-<div class="card p-4 mb-4">
-    <h5 class="mb-3">📥 Downloads — Last 7 Days</h5>
+<!-- Charts -->
+<div class="card" style="padding: 24px; margin-bottom: 20px;">
+    <div class="breadcrumb-mono" style="margin-bottom: 6px;">TIME-SERIES</div>
+    <h5 style="font-size: 13px; letter-spacing: 0.1em; margin-bottom: 16px;">DOWNLOADS · LAST 7 DAYS</h5>
     {% if stats.week_downloads %}
         <canvas id="downloadsChart" height="80"></canvas>
     {% else %}
-        <p class="text-muted">No download data yet.</p>
+        <div style="text-align: center; padding: 60px 0; color: var(--text-muted);" class="font-mono">
+            // INSUFFICIENT DATA
+        </div>
     {% endif %}
 </div>
 
-<!-- Growth Chart -->
-<div class="card p-4 mb-4">
-    <h5 class="mb-3">📈 User Growth — Last 30 Days</h5>
+<div class="card" style="padding: 24px; margin-bottom: 20px;">
+    <div class="breadcrumb-mono" style="margin-bottom: 6px;">GROWTH</div>
+    <h5 style="font-size: 13px; letter-spacing: 0.1em; margin-bottom: 16px;">USER ACQUISITION · LAST 30 DAYS</h5>
     {% if stats.growth %}
         <canvas id="growthChart" height="80"></canvas>
     {% else %}
-        <p class="text-muted">No user data yet.</p>
+        <div style="text-align: center; padding: 60px 0; color: var(--text-muted);" class="font-mono">
+            // INSUFFICIENT DATA
+        </div>
     {% endif %}
 </div>
 
 <div class="row g-3">
     <!-- Platform Breakdown -->
     <div class="col-md-6">
-        <div class="card p-4">
-            <h5 class="mb-3">🌍 Platform Breakdown</h5>
+        <div class="card" style="padding: 24px;">
+            <div class="breadcrumb-mono" style="margin-bottom: 6px;">BREAKDOWN</div>
+            <h5 style="font-size: 13px; letter-spacing: 0.1em; margin-bottom: 16px;">PLATFORM DISTRIBUTION</h5>
             {% if stats.platform_stats %}
-            <table class="table table-dark table-sm">
+            <table class="table mb-0">
                 <thead>
-                    <tr><th>Platform</th><th class="text-end">Downloads</th></tr>
+                    <tr><th>PLATFORM</th><th style="text-align: right;">COUNT</th></tr>
                 </thead>
                 <tbody>
-                    {% for platform, count in stats.platform_stats.items() %}
+                {% for platform, count in stats.platform_stats.items() %}
                     <tr>
                         <td>{{ platform|capitalize }}</td>
-                        <td class="text-end"><strong>{{ count }}</strong></td>
+                        <td style="text-align: right;" class="font-mono" style="color: var(--neon-lime);">{{ count }}</td>
                     </tr>
-                    {% endfor %}
+                {% endfor %}
                 </tbody>
             </table>
             {% else %}
-            <p class="text-muted mb-0">No data yet.</p>
+            <div style="text-align: center; padding: 30px 0; color: var(--text-muted);" class="font-mono">// NO DATA</div>
             {% endif %}
         </div>
     </div>
 
     <!-- Top Users -->
     <div class="col-md-6">
-        <div class="card p-4">
-            <h5 class="mb-3">🏆 Top Downloaders</h5>
+        <div class="card" style="padding: 24px;">
+            <div class="breadcrumb-mono" style="margin-bottom: 6px;">LEADERBOARD</div>
+            <h5 style="font-size: 13px; letter-spacing: 0.1em; margin-bottom: 16px;">TOP OPERATORS</h5>
             {% if stats.top_users %}
-            <table class="table table-dark table-sm">
+            <table class="table mb-0">
                 <thead>
-                    <tr><th>#</th><th>User</th><th class="text-end">Downloads</th></tr>
+                    <tr><th>RANK</th><th>OPERATOR</th><th style="text-align: right;">DOWNLOADS</th></tr>
                 </thead>
                 <tbody>
-                    {% for entry in stats.top_users %}
+                {% for entry in stats.top_users %}
                     <tr>
-                        <td>{{ loop.index }}</td>
+                        <td class="font-mono" style="color: var(--neon-amber); font-weight: 700;">#{{ loop.index }}</td>
                         <td>
                             <a href="{{ url_for('user_detail', user_id=entry.user.id) }}">
                                 {{ entry.user.first_name or '@' + (entry.user.username or 'user') }}
                             </a>
                         </td>
-                        <td class="text-end"><strong>{{ entry.count }}</strong></td>
+                        <td style="text-align: right;" class="font-mono" style="color: var(--neon-lime);">{{ entry.count }}</td>
                     </tr>
-                    {% endfor %}
+                {% endfor %}
                 </tbody>
             </table>
             {% else %}
-            <p class="text-muted mb-0">No data yet.</p>
+            <div style="text-align: center; padding: 30px 0; color: var(--text-muted);" class="font-mono">// NO DATA</div>
             {% endif %}
         </div>
     </div>
@@ -118,16 +133,24 @@ const dlData = {
     datasets: [{
         label: 'Downloads',
         data: {{ stats.week_downloads | map(attribute='count') | list | tojson }},
-        borderColor: '#00ff41',
-        backgroundColor: 'rgba(0,255,65,0.1)',
-        tension: 0.3,
+        borderColor: '#b4ff39',
+        backgroundColor: 'rgba(180,255,57,0.08)',
+        tension: 0.4,
         fill: true,
+        pointBackgroundColor: '#b4ff39',
+        pointBorderColor: '#b4ff39',
+        pointRadius: 4,
     }]
 };
 new Chart(document.getElementById('downloadsChart'), {
     type: 'line', data: dlData,
-    options: { plugins: { legend: { labels: { color: '#e0e0e0' } } },
-    scales: { x: { ticks: { color: '#888' } }, y: { ticks: { color: '#888' }, beginAtZero: true } } }
+    options: {
+        plugins: { legend: { display: false } },
+        scales: {
+            x: { ticks: { color: '#6b7585', font: { family: 'JetBrains Mono', size: 10 } }, grid: { color: 'rgba(180,255,57,0.04)' } },
+            y: { ticks: { color: '#6b7585', font: { family: 'JetBrains Mono', size: 10 } }, grid: { color: 'rgba(180,255,57,0.04)' }, beginAtZero: true }
+        }
+    }
 });
 {% endif %}
 
@@ -137,13 +160,20 @@ const growthData = {
     datasets: [{
         label: 'New Users',
         data: {{ stats.growth | map(attribute='count') | list | tojson }},
-        backgroundColor: '#00ff41',
+        backgroundColor: 'rgba(0, 229, 255, 0.5)',
+        borderColor: '#00e5ff',
+        borderWidth: 1,
     }]
 };
 new Chart(document.getElementById('growthChart'), {
     type: 'bar', data: growthData,
-    options: { plugins: { legend: { labels: { color: '#e0e0e0' } } },
-    scales: { x: { ticks: { color: '#888' } }, y: { ticks: { color: '#888' }, beginAtZero: true } } }
+    options: {
+        plugins: { legend: { display: false } },
+        scales: {
+            x: { ticks: { color: '#6b7585', font: { family: 'JetBrains Mono', size: 9 } }, grid: { color: 'rgba(0,229,255,0.03)' } },
+            y: { ticks: { color: '#6b7585', font: { family: 'JetBrains Mono', size: 10 } }, grid: { color: 'rgba(0,229,255,0.03)' }, beginAtZero: true }
+        }
+    }
 });
 {% endif %}
 </script>

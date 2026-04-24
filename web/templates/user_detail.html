@@ -1,142 +1,172 @@
 {% extends "base.html" %}
-{% block title %}User Detail — GODZILLA{% endblock %}
+{% block title %}OPERATOR // {{ user.first_name or user.telegram_id }}{% endblock %}
 
 {% block content %}
-<a href="{{ url_for('users_list') }}" class="btn btn-sm btn-outline-secondary mb-3">
-    <i class="bi bi-arrow-left"></i> Back to users
-</a>
+<div class="page-header">
+    <div>
+        <div class="breadcrumb-mono">SYSTEM / USERS / PROFILE</div>
+        <h2>OPERATOR DETAILS</h2>
+    </div>
+    <a href="{{ url_for('users_list') }}" class="btn btn-outline-primary">
+        <i class="bi bi-arrow-left"></i> BACK TO LIST
+    </a>
+</div>
 
-<div class="row g-3 mb-4">
+<div class="row g-3 mb-3">
+    <!-- Profile Card -->
     <div class="col-md-8">
-        <div class="card p-4">
-            <h3>
-                <span style="font-size: 1.5em;">{{ user.avatar_emoji or '🦖' }}</span>
-                {{ user.display_name or user.first_name or 'Unknown' }}
-                {% if user.is_banned %}<span class="badge bg-danger">Banned</span>
-                {% elif user.is_premium %}<span class="badge badge-premium">Premium</span>
-                {% else %}<span class="badge bg-secondary">Free</span>
-                {% endif %}
-                {% if user.title %}<span class="badge bg-warning text-dark">{{ user.title }}</span>{% endif %}
-            </h3>
-
-            {% if user.bio %}
-            <p class="text-muted fst-italic mt-2 mb-2">"{{ user.bio }}"</p>
-            {% endif %}
-
-            {% if user.badges %}
-            <div class="mb-2">
-                <small class="text-muted">Badges:</small>
-                <span class="ms-2">
-                {% set badge_emojis = {'early_bird':'🌅','loyal':'💎','downloader':'📥','power_user':'⚡','legend':'👑','referrer':'🤝','ambassador':'🌟','premium':'💳','veteran':'🎖'} %}
-                {% for key, emoji in badge_emojis.items() %}
-                    {% if key in user.badges %}{{ emoji }}{% endif %}
-                {% endfor %}
-                </span>
+        <div class="card" style="padding: 28px;">
+            <div style="display: flex; align-items: center; gap: 24px; margin-bottom: 20px;">
+                <div style="width: 90px; height: 90px; background: linear-gradient(135deg, rgba(180,255,57,0.1), rgba(0,229,255,0.05)); border: 1px solid var(--border-active); display: flex; align-items: center; justify-content: center; font-size: 48px; border-radius: 2px;">
+                    {{ user.avatar_emoji or '🦖' }}
+                </div>
+                <div style="flex: 1;">
+                    <h3 style="margin: 0; font-size: 20px; display: flex; align-items: center; gap: 12px;">
+                        {{ user.display_name or user.first_name or 'Unknown' }}
+                        {% if user.is_banned %}<span class="badge bg-danger">BANNED</span>
+                        {% elif user.is_premium %}<span class="badge badge-premium">PREMIUM</span>
+                        {% else %}<span class="badge bg-secondary">FREE</span>
+                        {% endif %}
+                        {% if user.title %}<span class="badge bg-warning">{{ user.title }}</span>{% endif %}
+                    </h3>
+                    {% if user.bio %}
+                    <p style="font-style: italic; color: var(--text-muted); margin: 8px 0; font-size: 13px;">"{{ user.bio }}"</p>
+                    {% endif %}
+                    {% if user.badges %}
+                    <div style="margin-top: 6px;">
+                        <span class="font-mono" style="font-size: 10px; color: var(--text-dim); letter-spacing: 0.2em;">BADGES:</span>
+                        <span style="margin-left: 6px; font-size: 18px;">
+                            {% set badge_emojis = {'early_bird':'🌅','loyal':'💎','downloader':'📥','power_user':'⚡','legend':'👑','referrer':'🤝','ambassador':'🌟','premium':'💳','veteran':'🎖'} %}
+                            {% for key, emoji in badge_emojis.items() %}
+                                {% if key in user.badges %}{{ emoji }}{% endif %}
+                            {% endfor %}
+                        </span>
+                    </div>
+                    {% endif %}
+                </div>
             </div>
-            {% endif %}
 
-            <div class="row mt-3 g-2 small">
-                <div class="col-6"><strong>Telegram ID:</strong> <code>{{ user.telegram_id }}</code></div>
-                <div class="col-6"><strong>Username:</strong> {% if user.username %}@{{ user.username }}{% else %}-{% endif %}</div>
-                <div class="col-6"><strong>Joined:</strong> {{ user.joined_at.strftime('%Y-%m-%d %H:%M') }}</div>
-                <div class="col-6"><strong>Downloads Today:</strong> {{ user.downloads_today }}</div>
-                <div class="col-6"><strong>Total Downloads:</strong> {{ user.total_downloads }}</div>
-                <div class="col-6"><strong>Referrals:</strong> {{ user.referral_count }}</div>
-                <div class="col-6"><strong>Reputation:</strong> {{ user.reputation or 0 }}</div>
+            <hr>
+
+            <div class="row g-2" style="font-size: 13px;">
+                <div class="col-md-6">
+                    <span class="font-mono" style="font-size: 10px; color: var(--text-dim); letter-spacing: 0.2em;">TELEGRAM ID</span>
+                    <div><code>{{ user.telegram_id }}</code></div>
+                </div>
+                <div class="col-md-6">
+                    <span class="font-mono" style="font-size: 10px; color: var(--text-dim); letter-spacing: 0.2em;">USERNAME</span>
+                    <div>{% if user.username %}@{{ user.username }}{% else %}<span class="text-muted">—</span>{% endif %}</div>
+                </div>
+                <div class="col-md-6">
+                    <span class="font-mono" style="font-size: 10px; color: var(--text-dim); letter-spacing: 0.2em;">JOINED</span>
+                    <div class="font-mono">{{ user.joined_at.strftime('%Y-%m-%d · %H:%M') }}</div>
+                </div>
+                <div class="col-md-6">
+                    <span class="font-mono" style="font-size: 10px; color: var(--text-dim); letter-spacing: 0.2em;">TODAY / TOTAL</span>
+                    <div>
+                        <span class="font-mono" style="color: var(--neon-lime);">{{ user.downloads_today }}</span>
+                        <span class="text-muted">/ {{ user.total_downloads }}</span>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <span class="font-mono" style="font-size: 10px; color: var(--text-dim); letter-spacing: 0.2em;">REFERRALS</span>
+                    <div class="font-mono" style="color: var(--neon-cyan);">{{ user.referral_count }}</div>
+                </div>
+                <div class="col-md-6">
+                    <span class="font-mono" style="font-size: 10px; color: var(--text-dim); letter-spacing: 0.2em;">REPUTATION</span>
+                    <div class="font-mono">{{ user.reputation or 0 }}</div>
+                </div>
                 {% if user.custom_limit %}
-                <div class="col-6"><strong>Custom Limit:</strong>
-                    <span class="badge bg-info text-dark">{{ user.custom_limit }}/day</span>
+                <div class="col-md-6">
+                    <span class="font-mono" style="font-size: 10px; color: var(--text-dim); letter-spacing: 0.2em;">CUSTOM LIMIT</span>
+                    <div><span class="badge bg-info">{{ user.custom_limit }}/day</span></div>
                 </div>
                 {% endif %}
                 {% if user.is_premium and user.subscription_expires_at %}
-                <div class="col-12"><strong>Premium Expires:</strong>
-                    {{ user.subscription_expires_at.strftime('%Y-%m-%d %H:%M') }}
-                    ({{ user.subscription_plan or 'manual' }})
+                <div class="col-12">
+                    <span class="font-mono" style="font-size: 10px; color: var(--text-dim); letter-spacing: 0.2em;">PREMIUM EXPIRES</span>
+                    <div class="font-mono">{{ user.subscription_expires_at.strftime('%Y-%m-%d %H:%M') }} <span class="text-muted">({{ user.subscription_plan or 'manual' }})</span></div>
                 </div>
                 {% endif %}
             </div>
         </div>
     </div>
 
+    <!-- Actions -->
     <div class="col-md-4">
-        <div class="card p-3">
-            <h5>Actions</h5>
-            <form method="POST" action="{{ url_for('user_action', user_id=user.id) }}">
-                <div class="d-grid gap-2">
-                    {% if user.is_banned %}
-                        <button name="action" value="unban" class="btn btn-success">
-                            <i class="bi bi-unlock"></i> Unban
-                        </button>
-                    {% else %}
-                        <button name="action" value="ban" class="btn btn-danger"
-                                onclick="return confirm('Ban this user?')">
-                            <i class="bi bi-slash-circle"></i> Ban
-                        </button>
-                    {% endif %}
-                </div>
+        <div class="card" style="padding: 20px;">
+            <div class="breadcrumb-mono" style="margin-bottom: 12px;">CONTROL PANEL</div>
+            <h5 style="font-size: 13px; letter-spacing: 0.1em; margin-bottom: 16px;">ADMIN ACTIONS</h5>
+
+            <form method="POST" action="{{ url_for('user_action', user_id=user.id) }}" style="margin-bottom: 10px;">
+                {% if user.is_banned %}
+                    <button type="submit" name="action" value="unban" class="btn btn-outline-primary w-100">
+                        <i class="bi bi-unlock-fill"></i> UNBAN USER
+                    </button>
+                {% else %}
+                    <button type="submit" name="action" value="ban" class="btn btn-outline-danger w-100"
+                            onclick="return confirm('Ban this user?')">
+                        <i class="bi bi-slash-circle-fill"></i> BAN USER
+                    </button>
+                {% endif %}
             </form>
 
-            <hr>
-
-            <form method="POST" action="{{ url_for('user_action', user_id=user.id) }}">
-                <label class="form-label small">Grant Premium</label>
-                <div class="input-group input-group-sm mb-2">
-                    <input type="number" name="days" class="form-control bg-dark text-light" value="30" min="1">
-                    <span class="input-group-text">days</span>
-                </div>
-                <button name="action" value="grant_premium" class="btn btn-warning w-100 btn-sm">
-                    <i class="bi bi-star"></i> Grant Premium
-                </button>
+            <form method="POST" action="{{ url_for('user_action', user_id=user.id) }}" style="margin-bottom: 10px;">
+                {% if user.is_premium %}
+                    <button type="submit" name="action" value="remove_premium" class="btn btn-outline-primary w-100">
+                        <i class="bi bi-star"></i> REVOKE PREMIUM
+                    </button>
+                {% else %}
+                    <button type="submit" name="action" value="grant_premium" class="btn btn-outline-primary w-100">
+                        <i class="bi bi-star-fill"></i> GRANT PREMIUM
+                    </button>
+                {% endif %}
             </form>
-
-            {% if user.is_premium %}
-            <form method="POST" action="{{ url_for('user_action', user_id=user.id) }}" class="mt-2">
-                <button name="action" value="revoke_premium" class="btn btn-outline-danger w-100 btn-sm"
-                        onclick="return confirm('Revoke premium?')">
-                    <i class="bi bi-x-circle"></i> Revoke Premium
-                </button>
-            </form>
-            {% endif %}
 
             <hr>
 
             <form method="POST" action="{{ url_for('user_set_limit', user_id=user.id) }}">
-                <label class="form-label small">
-                    Custom Daily Limit
-                    {% if user.custom_limit %}
-                        <span class="badge bg-info text-dark">Active: {{ user.custom_limit }}</span>
-                    {% endif %}
-                </label>
-                <div class="input-group input-group-sm mb-2">
-                    <input type="text" name="custom_limit" class="form-control bg-dark text-light"
+                <label class="form-label">◦ Custom Daily Limit</label>
+                <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+                    <input type="text" name="limit" class="form-control"
                            value="{{ user.custom_limit or '' }}"
-                           placeholder="e.g. 500 or 'reset'">
+                           placeholder="500 or reset">
                 </div>
-                <button type="submit" class="btn btn-info w-100 btn-sm">
-                    <i class="bi bi-sliders"></i> Set Limit
+                <button type="submit" class="btn btn-outline-primary w-100">
+                    <i class="bi bi-sliders"></i> APPLY LIMIT
                 </button>
-                <small class="text-muted d-block mt-1">Type 'reset' to use plan default</small>
+                <small class="font-mono" style="font-size: 10px; color: var(--text-muted); display: block; margin-top: 6px;">
+                    // Type 'reset' for default
+                </small>
             </form>
         </div>
     </div>
 </div>
 
+<!-- Data Feeds -->
 <div class="row g-3">
     <div class="col-md-7">
-        <div class="card p-3">
-            <h5><i class="bi bi-download"></i> Recent Downloads</h5>
-            <table class="table table-dark table-sm">
-                <thead><tr><th>Title</th><th>Platform</th><th>Type</th><th>When</th></tr></thead>
+        <div class="card" style="padding: 24px;">
+            <div class="breadcrumb-mono" style="margin-bottom: 6px;">DATA STREAM</div>
+            <h5 style="font-size: 13px; letter-spacing: 0.1em; margin-bottom: 16px;">DOWNLOAD HISTORY</h5>
+            <table class="table mb-0">
+                <thead>
+                    <tr><th>ASSET</th><th>SOURCE</th><th>TYPE</th><th style="text-align: right;">TIME</th></tr>
+                </thead>
                 <tbody>
                 {% for d in downloads %}
                     <tr>
-                        <td class="text-truncate" style="max-width: 180px;">{{ d.title or 'Unknown' }}</td>
+                        <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                            {{ d.title or '—' }}
+                        </td>
                         <td><span class="badge bg-secondary">{{ d.platform }}</span></td>
-                        <td>{{ d.media_type }}</td>
-                        <td class="text-muted small">{{ d.created_at.strftime('%m-%d %H:%M') }}</td>
+                        <td class="font-mono text-muted">{{ d.media_type }}</td>
+                        <td style="text-align: right;" class="font-mono" style="font-size: 10px; color: var(--text-muted);">
+                            {{ d.created_at.strftime('%m.%d · %H:%M') }}
+                        </td>
                     </tr>
                 {% else %}
-                    <tr><td colspan="4" class="text-center text-muted">No downloads</td></tr>
+                    <tr><td colspan="4" style="text-align: center; color: var(--text-muted); padding: 30px;" class="font-mono">// NO DOWNLOADS</td></tr>
                 {% endfor %}
                 </tbody>
             </table>
@@ -144,25 +174,27 @@
     </div>
 
     <div class="col-md-5">
-        <div class="card p-3">
-            <h5><i class="bi bi-credit-card"></i> Payment History</h5>
-            <table class="table table-dark table-sm">
-                <thead><tr><th>Plan</th><th>Amount</th><th>Status</th><th>Date</th></tr></thead>
+        <div class="card" style="padding: 24px;">
+            <div class="breadcrumb-mono" style="margin-bottom: 6px;">FINANCE</div>
+            <h5 style="font-size: 13px; letter-spacing: 0.1em; margin-bottom: 16px;">PAYMENT HISTORY</h5>
+            <table class="table mb-0">
+                <thead>
+                    <tr><th>PLAN</th><th style="text-align: right;">AMOUNT</th><th style="text-align: center;">STATUS</th></tr>
+                </thead>
                 <tbody>
                 {% for p in payments %}
                     <tr>
-                        <td>{{ p.plan }}</td>
-                        <td>₹{{ p.amount / 100 }}</td>
-                        <td>
-                            {% if p.status == 'paid' %}<span class="badge bg-success">Paid</span>
-                            {% elif p.status == 'failed' %}<span class="badge bg-danger">Failed</span>
-                            {% else %}<span class="badge bg-warning">{{ p.status }}</span>
+                        <td class="font-mono">{{ p.plan }}</td>
+                        <td style="text-align: right;" class="font-mono" style="color: var(--neon-lime);">₹{{ p.amount / 100 }}</td>
+                        <td style="text-align: center;">
+                            {% if p.status == 'paid' %}<span class="badge bg-success">PAID</span>
+                            {% elif p.status == 'failed' %}<span class="badge bg-danger">FAILED</span>
+                            {% else %}<span class="badge bg-warning">{{ p.status|upper }}</span>
                             {% endif %}
                         </td>
-                        <td class="text-muted small">{{ p.created_at.strftime('%m-%d') }}</td>
                     </tr>
                 {% else %}
-                    <tr><td colspan="4" class="text-center text-muted">No payments</td></tr>
+                    <tr><td colspan="3" style="text-align: center; color: var(--text-muted); padding: 30px;" class="font-mono">// NO PAYMENTS</td></tr>
                 {% endfor %}
                 </tbody>
             </table>

@@ -1,82 +1,98 @@
 {% extends "base.html" %}
-{% block title %}Users — GODZILLA{% endblock %}
+{% block title %}OPERATORS // GODZILLA{% endblock %}
 
 {% block content %}
-<h2><i class="bi bi-people"></i> Users</h2>
+<div class="page-header">
+    <div>
+        <div class="breadcrumb-mono">SYSTEM / OPERATIONS / USERS</div>
+        <h2>OPERATORS DATABASE</h2>
+    </div>
+    <div class="font-mono" style="font-size: 11px; color: var(--text-muted); letter-spacing: 0.15em;">
+        {{ users|length }} RECORDS LOADED
+    </div>
+</div>
 
-<form class="row g-2 mb-3" method="GET">
-    <div class="col-md-6">
-        <input type="search" name="q" value="{{ q }}" class="form-control bg-dark text-light"
-               placeholder="Search by name, username, or Telegram ID...">
-    </div>
-    <div class="col-md-3">
-        <select name="filter" class="form-select bg-dark text-light">
-            <option value="all" {% if filter_type == 'all' %}selected{% endif %}>All users</option>
-            <option value="premium" {% if filter_type == 'premium' %}selected{% endif %}>Premium only</option>
-            <option value="free" {% if filter_type == 'free' %}selected{% endif %}>Free only</option>
-            <option value="banned" {% if filter_type == 'banned' %}selected{% endif %}>Banned</option>
-        </select>
-    </div>
-    <div class="col-md-3">
-        <button type="submit" class="btn btn-godzilla w-100"><i class="bi bi-search"></i> Search</button>
+<!-- Filters -->
+<form method="GET" class="card" style="padding: 20px; margin-bottom: 20px;">
+    <div class="row g-2">
+        <div class="col-md-5">
+            <label class="form-label">◦ Search Query</label>
+            <input type="text" class="form-control" name="search" value="{{ search or '' }}"
+                   placeholder="Telegram ID or name...">
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">◦ Status Filter</label>
+            <select name="filter" class="form-select">
+                <option value="">ALL OPERATORS</option>
+                <option value="premium" {% if filter_type == 'premium' %}selected{% endif %}>PREMIUM</option>
+                <option value="free" {% if filter_type == 'free' %}selected{% endif %}>FREE</option>
+                <option value="banned" {% if filter_type == 'banned' %}selected{% endif %}>BANNED</option>
+            </select>
+        </div>
+        <div class="col-md-4 d-flex align-items-end gap-2">
+            <button class="btn btn-godzilla"><i class="bi bi-search"></i> EXECUTE</button>
+            <a href="{{ url_for('users_list') }}" class="btn btn-outline-primary">RESET</a>
+        </div>
     </div>
 </form>
 
-<div class="card p-3">
-    <div class="text-muted small mb-2">Total: {{ total }}</div>
-    <div class="table-responsive">
-    <table class="table table-dark table-hover">
+<!-- Users Table -->
+<div class="card" style="padding: 0; overflow: hidden;">
+    <table class="table table-dark mb-0">
         <thead>
             <tr>
-                <th>Name</th>
-                <th>Username</th>
-                <th>TG ID</th>
-                <th>Downloads</th>
-                <th>Status</th>
-                <th>Joined</th>
-                <th></th>
+                <th>#</th>
+                <th>OPERATOR</th>
+                <th>TELEGRAM ID</th>
+                <th>DOWNLOADS</th>
+                <th>JOINED</th>
+                <th style="text-align: right;">STATUS</th>
             </tr>
         </thead>
         <tbody>
         {% for u in users %}
             <tr>
-                <td>{{ u.first_name or '-' }}</td>
-                <td>{% if u.username %}@{{ u.username }}{% else %}-{% endif %}</td>
-                <td><code>{{ u.telegram_id }}</code></td>
-                <td>{{ u.total_downloads }}</td>
+                <td style="width: 40px;" class="font-mono text-muted">{{ loop.index }}</td>
                 <td>
-                    {% if u.is_banned %}<span class="badge bg-danger">Banned</span>
-                    {% elif u.is_premium %}<span class="badge badge-premium">Premium</span>
-                    {% else %}<span class="badge bg-secondary">Free</span>
-                    {% endif %}
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <span style="font-size: 18px;">{{ u.avatar_emoji or '🦖' }}</span>
+                        <div>
+                            <a href="{{ url_for('user_detail', user_id=u.id) }}" style="font-weight: 500;">
+                                {{ u.display_name or u.first_name or 'Unknown' }}
+                            </a>
+                            {% if u.username %}
+                            <div class="font-mono" style="font-size: 10px; color: var(--text-dim);">@{{ u.username }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
                 </td>
-                <td class="small text-muted">{{ u.joined_at.strftime('%Y-%m-%d') }}</td>
+                <td><code>{{ u.telegram_id }}</code></td>
                 <td>
-                    <a href="{{ url_for('user_detail', user_id=u.id) }}" class="btn btn-sm btn-outline-primary">
-                        <i class="bi bi-eye"></i>
-                    </a>
+                    <span class="font-mono" style="font-size: 13px; color: var(--neon-lime);">{{ u.total_downloads }}</span>
+                    <span class="font-mono" style="font-size: 10px; color: var(--text-dim);">/ {{ u.downloads_today }} today</span>
+                </td>
+                <td class="font-mono" style="font-size: 10px; color: var(--text-muted);">
+                    {{ u.joined_at.strftime('%m.%d.%Y') }}
+                </td>
+                <td style="text-align: right;">
+                    {% if u.is_banned %}<span class="badge bg-danger">BANNED</span>
+                    {% elif u.is_premium %}<span class="badge badge-premium">PREMIUM</span>
+                    {% else %}<span class="badge bg-secondary">FREE</span>
+                    {% endif %}
                 </td>
             </tr>
         {% else %}
-            <tr><td colspan="7" class="text-center text-muted py-4">No users found</td></tr>
+            <tr><td colspan="6" style="text-align: center; padding: 60px 0; color: var(--text-muted);" class="font-mono">
+                // NO OPERATORS MATCH YOUR FILTERS
+            </td></tr>
         {% endfor %}
         </tbody>
     </table>
-    </div>
-
-    {% set pages = (total // per_page) + (1 if total % per_page else 0) %}
-    {% if pages > 1 %}
-    <nav>
-        <ul class="pagination">
-            {% if page > 1 %}
-            <li class="page-item"><a class="page-link" href="?q={{ q }}&filter={{ filter_type }}&page={{ page-1 }}">Prev</a></li>
-            {% endif %}
-            <li class="page-item active"><span class="page-link">{{ page }} / {{ pages }}</span></li>
-            {% if page < pages %}
-            <li class="page-item"><a class="page-link" href="?q={{ q }}&filter={{ filter_type }}&page={{ page+1 }}">Next</a></li>
-            {% endif %}
-        </ul>
-    </nav>
-    {% endif %}
 </div>
+
+{% if users|length >= 100 %}
+<div style="text-align: center; margin-top: 16px;" class="font-mono">
+    <small style="color: var(--text-muted);">// SHOWING FIRST 100 RESULTS — NARROW FILTERS TO SEE MORE</small>
+</div>
+{% endif %}
 {% endblock %}

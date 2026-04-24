@@ -1,85 +1,102 @@
 {% extends "base.html" %}
-{% block title %}{% if plan %}Edit{% else %}New{% endif %} Plan — GODZILLA{% endblock %}
+{% block title %}{% if plan %}EDIT TIER{% else %}NEW TIER{% endif %} // GODZILLA{% endblock %}
 
 {% block content %}
-<h2><i class="bi bi-tag"></i> {% if plan %}Edit Plan{% else %}New Plan{% endif %}</h2>
-<a href="{{ url_for('plans_list') }}" class="btn btn-sm btn-outline-secondary mb-3">
-    <i class="bi bi-arrow-left"></i> Back
-</a>
+<div class="page-header">
+    <div>
+        <div class="breadcrumb-mono">SYSTEM / PLANS / {% if plan %}EDIT{% else %}CREATE{% endif %}</div>
+        <h2>{% if plan %}EDIT TIER{% else %}NEW TIER{% endif %}</h2>
+    </div>
+    <a href="{{ url_for('plans_list') }}" class="btn btn-outline-primary">
+        <i class="bi bi-arrow-left"></i> BACK
+    </a>
+</div>
 
-<div class="card p-4">
+<div class="card" style="padding: 28px; max-width: 800px;">
     <form method="POST">
         <div class="row g-3">
             <div class="col-md-6">
-                <label class="form-label">Plan Key <span class="text-muted">(unique, e.g. "monthly")</span></label>
-                <input type="text" name="key" class="form-control bg-dark text-light"
-                       value="{{ plan.key if plan else '' }}" required pattern="[a-z0-9_]+">
-                <small class="text-muted">lowercase letters, numbers, underscores only</small>
+                <label class="form-label">◦ Tier Key (Unique ID)</label>
+                <input type="text" name="key" class="form-control" required
+                       value="{{ plan.key if plan else '' }}"
+                       placeholder="monthly, yearly, lifetime..."
+                       {% if plan %}readonly{% endif %}>
+                <small class="font-mono" style="font-size: 10px; color: var(--text-muted);">
+                    // Lowercase, no spaces. Cannot be changed after creation.
+                </small>
             </div>
             <div class="col-md-6">
-                <label class="form-label">Display Name</label>
-                <input type="text" name="name" class="form-control bg-dark text-light"
-                       value="{{ plan.name if plan else '💎 Monthly Premium' }}" required>
+                <label class="form-label">◦ Display Name</label>
+                <input type="text" name="name" class="form-control" required
+                       value="{{ plan.name if plan else '' }}"
+                       placeholder="💎 Premium Monthly">
             </div>
 
             <div class="col-md-6">
-                <label class="form-label">Category</label>
-                <select name="category" class="form-select bg-dark text-light">
-                    {% set current = plan.category if plan and plan.category else 'premium' %}
-                    <option value="basic" {% if current == 'basic' %}selected{% endif %}>🆓 Basic</option>
-                    <option value="premium" {% if current == 'premium' %}selected{% endif %}>💎 Premium</option>
-                    <option value="pro" {% if current == 'pro' %}selected{% endif %}>🔥 Pro</option>
-                    <option value="lifetime" {% if current == 'lifetime' %}selected{% endif %}>👑 Lifetime</option>
-                    <option value="custom" {% if current == 'custom' %}selected{% endif %}>⚡ Custom</option>
+                <label class="form-label">◦ Category</label>
+                <select name="category" class="form-select" required>
+                    <option value="basic"    {% if plan and plan.category == 'basic' %}selected{% endif %}>🆓 Basic</option>
+                    <option value="premium"  {% if not plan or plan.category == 'premium' %}selected{% endif %}>💎 Premium</option>
+                    <option value="pro"      {% if plan and plan.category == 'pro' %}selected{% endif %}>🔥 Pro</option>
+                    <option value="lifetime" {% if plan and plan.category == 'lifetime' %}selected{% endif %}>👑 Lifetime</option>
+                    <option value="custom"   {% if plan and plan.category == 'custom' %}selected{% endif %}>⚡ Custom</option>
                 </select>
-                <small class="text-muted">Groups plans in /subscribe menu</small>
             </div>
             <div class="col-md-6">
-                <label class="form-label">Badge <span class="text-muted">(optional)</span></label>
-                <input type="text" name="badge" class="form-control bg-dark text-light"
-                       value="{{ plan.badge if plan else '' }}" placeholder="e.g. POPULAR, BEST VALUE">
-                <small class="text-muted">Highlight tag next to name</small>
+                <label class="form-label">◦ Badge (Optional)</label>
+                <input type="text" name="badge" class="form-control"
+                       value="{{ plan.badge if plan else '' }}"
+                       placeholder="POPULAR, BEST VALUE, HOT..." maxlength="50">
             </div>
 
             <div class="col-md-4">
-                <label class="form-label">Amount (₹)</label>
-                <input type="number" name="amount" class="form-control bg-dark text-light"
-                       value="{{ plan.amount if plan else 49 }}" min="1" required>
+                <label class="form-label">◦ Amount (₹)</label>
+                <input type="number" name="amount" class="form-control" required min="1"
+                       value="{{ plan.amount if plan else '49' }}">
             </div>
             <div class="col-md-4">
-                <label class="form-label">Duration (days)</label>
-                <input type="number" name="duration_days" class="form-control bg-dark text-light"
-                       value="{{ plan.duration_days if plan else 30 }}" min="1" required>
+                <label class="form-label">◦ Duration (days)</label>
+                <input type="number" name="duration_days" class="form-control" required min="1"
+                       value="{{ plan.duration_days if plan else '30' }}">
             </div>
             <div class="col-md-4">
-                <label class="form-label">Daily Download Limit</label>
-                <input type="number" name="daily_limit" class="form-control bg-dark text-light"
-                       value="{{ plan.daily_limit if plan else 100 }}" min="1" required>
+                <label class="form-label">◦ Daily Limit</label>
+                <input type="number" name="daily_limit" class="form-control" required min="1"
+                       value="{{ plan.daily_limit if plan else '100' }}">
             </div>
 
             <div class="col-12">
-                <label class="form-label">Description</label>
-                <textarea name="description" rows="2" class="form-control bg-dark text-light">{{ plan.description if plan else '' }}</textarea>
+                <label class="form-label">◦ Description</label>
+                <textarea name="description" class="form-control" rows="3"
+                          placeholder="Describe what users get with this tier...">{{ plan.description if plan else '' }}</textarea>
             </div>
-            <div class="col-md-4">
-                <label class="form-label">Sort Order <span class="text-muted">(lower = higher)</span></label>
-                <input type="number" name="sort_order" class="form-control bg-dark text-light"
-                       value="{{ plan.sort_order if plan else 1 }}">
+
+            <div class="col-md-6">
+                <label class="form-label">◦ Sort Order</label>
+                <input type="number" name="sort_order" class="form-control"
+                       value="{{ plan.sort_order if plan else '0' }}">
+                <small class="font-mono" style="font-size: 10px; color: var(--text-muted);">
+                    // Lower number = shown first
+                </small>
             </div>
-            <div class="col-md-8 d-flex align-items-end">
-                <div class="form-check form-switch">
-                    <input type="checkbox" name="is_active" id="is_active" class="form-check-input"
-                           {% if not plan or plan.is_active %}checked{% endif %}>
-                    <label class="form-check-label" for="is_active">Active (shown in /subscribe)</label>
-                </div>
+
+            <div class="col-md-6 d-flex align-items-center" style="padding-top: 26px;">
+                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                    <input type="checkbox" name="is_active" class="form-check-input"
+                           {% if not plan or plan.is_active %}checked{% endif %}
+                           style="width: 20px; height: 20px; margin: 0;">
+                    <span class="font-mono" style="font-size: 11px; letter-spacing: 0.15em;">ACTIVE (VISIBLE TO USERS)</span>
+                </label>
             </div>
         </div>
 
-        <div class="mt-4">
-            <button type="submit" class="btn btn-godzilla fw-bold">
-                <i class="bi bi-check-circle"></i> Save Plan
+        <hr>
+
+        <div style="display: flex; gap: 12px;">
+            <button type="submit" class="btn btn-godzilla">
+                <i class="bi bi-check-circle-fill"></i> {% if plan %}UPDATE TIER{% else %}CREATE TIER{% endif %}
             </button>
-            <a href="{{ url_for('plans_list') }}" class="btn btn-outline-secondary">Cancel</a>
+            <a href="{{ url_for('plans_list') }}" class="btn btn-outline-primary">CANCEL</a>
         </div>
     </form>
 </div>

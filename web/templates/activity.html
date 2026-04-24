@@ -1,103 +1,106 @@
 {% extends "base.html" %}
-{% block title %}Activity Feed — GODZILLA{% endblock %}
+{% block title %}LIVE FEED // GODZILLA{% endblock %}
 
 {% block content %}
-<h2><i class="bi bi-activity"></i> Activity Feed</h2>
-<p class="text-muted mb-4">Real-time bot activity: new users, downloads, events.</p>
+<div class="page-header">
+    <div>
+        <div class="breadcrumb-mono">SYSTEM / OVERVIEW / LIVE FEED</div>
+        <h2>REAL-TIME ACTIVITY</h2>
+    </div>
+    <div class="font-mono" style="font-size: 11px; color: var(--neon-lime); letter-spacing: 0.15em;">
+        <span class="status-dot" style="display:inline-block; margin-right:6px; vertical-align:middle;"></span>
+        AUTO-REFRESH · 30s
+    </div>
+</div>
 
 <div class="row g-3">
     <!-- Recent Users -->
     <div class="col-lg-4">
-        <div class="card p-4">
-            <h5 class="mb-3">👤 Recent Users</h5>
+        <div class="card" style="padding: 24px;">
+            <div class="breadcrumb-mono" style="margin-bottom: 6px;">NEW JOINS</div>
+            <h5 style="font-size: 13px; letter-spacing: 0.1em; margin-bottom: 16px;">RECENT OPERATORS</h5>
             {% if recent_users %}
             {% for u in recent_users %}
-            <div class="d-flex justify-content-between border-bottom border-secondary py-2">
+            <div style="padding: 10px 0; border-bottom: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center;">
                 <div>
-                    <a href="{{ url_for('user_detail', user_id=u.id) }}">
-                        <strong>{{ u.first_name or 'Unknown' }}</strong>
+                    <a href="{{ url_for('user_detail', user_id=u.id) }}" style="font-weight: 500; font-size: 13px;">
+                        {{ u.first_name or 'Unknown' }}
                     </a>
-                    <small class="text-muted d-block">@{{ u.username or '—' }}</small>
+                    <div class="font-mono" style="font-size: 10px; color: var(--text-dim);">@{{ u.username or '—' }}</div>
                 </div>
-                <small class="text-muted">{{ u.created_at.strftime('%H:%M') }}</small>
+                <span class="font-mono" style="font-size: 10px; color: var(--text-muted);">{{ u.joined_at.strftime('%H:%M') if u.joined_at else '—' }}</span>
             </div>
             {% endfor %}
             {% else %}
-            <p class="text-muted">No users yet.</p>
+            <div style="text-align: center; padding: 30px 0; color: var(--text-muted);" class="font-mono">// NO EVENTS</div>
             {% endif %}
         </div>
     </div>
 
     <!-- Recent Downloads -->
     <div class="col-lg-4">
-        <div class="card p-4">
-            <h5 class="mb-3">📥 Recent Downloads</h5>
+        <div class="card" style="padding: 24px;">
+            <div class="breadcrumb-mono" style="margin-bottom: 6px;">ACTIVITY STREAM</div>
+            <h5 style="font-size: 13px; letter-spacing: 0.1em; margin-bottom: 16px;">RECENT DOWNLOADS</h5>
             {% if recent_downloads %}
             {% for d in recent_downloads %}
-            <div class="border-bottom border-secondary py-2">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <small class="text-muted">
-                            {% if d.status == 'success' %}
-                                <span class="text-success">✓</span>
-                            {% else %}
-                                <span class="text-danger">✗</span>
-                            {% endif %}
-                            {{ d.platform|capitalize }} — {{ d.media_type }}
-                        </small>
-                        <div class="text-truncate" style="max-width: 220px;">
-                            <small>{{ d.title or 'Untitled' }}</small>
-                        </div>
-                    </div>
-                    <small class="text-muted">{{ d.created_at.strftime('%H:%M') }}</small>
+            <div style="padding: 10px 0; border-bottom: 1px solid var(--border-subtle);">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span class="font-mono" style="font-size: 11px;">
+                        {% if d.status == 'success' %}
+                            <span style="color: var(--neon-lime);">✓</span>
+                        {% else %}
+                            <span style="color: var(--neon-magenta);">✗</span>
+                        {% endif %}
+                        {{ d.platform|upper }} · {{ d.media_type|upper }}
+                    </span>
+                    <span class="font-mono" style="font-size: 10px; color: var(--text-muted);">{{ d.created_at.strftime('%H:%M') }}</span>
+                </div>
+                <div style="font-size: 12px; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-top: 3px;">
+                    {{ d.title or '—' }}
                 </div>
             </div>
             {% endfor %}
             {% else %}
-            <p class="text-muted">No downloads yet.</p>
+            <div style="text-align: center; padding: 30px 0; color: var(--text-muted);" class="font-mono">// NO EVENTS</div>
             {% endif %}
         </div>
     </div>
 
     <!-- Recent Logs -->
     <div class="col-lg-4">
-        <div class="card p-4">
-            <h5 class="mb-3">📝 System Events</h5>
+        <div class="card" style="padding: 24px;">
+            <div class="breadcrumb-mono" style="margin-bottom: 6px;">SYSTEM EVENTS</div>
+            <h5 style="font-size: 13px; letter-spacing: 0.1em; margin-bottom: 16px;">LOG STREAM</h5>
             {% if recent_logs %}
             {% for log in recent_logs %}
-            <div class="border-bottom border-secondary py-2">
-                <div class="d-flex justify-content-between">
-                    <div>
+            <div style="padding: 10px 0; border-bottom: 1px solid var(--border-subtle);">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;">
+                    <div style="flex: 1; min-width: 0;">
                         {% if log.level == 'ERROR' %}
                             <span class="badge bg-danger">ERROR</span>
                         {% elif log.level == 'WARN' or log.level == 'WARNING' %}
-                            <span class="badge bg-warning text-dark">WARN</span>
+                            <span class="badge bg-warning">WARN</span>
                         {% else %}
-                            <span class="badge bg-secondary">{{ log.level }}</span>
+                            <span class="badge bg-info">{{ log.level }}</span>
                         {% endif %}
-                        <small>{{ log.action }}</small>
+                        <span style="font-size: 12px; color: var(--text-primary); margin-left: 6px;">{{ log.action }}</span>
                     </div>
-                    <small class="text-muted">{{ log.created_at.strftime('%H:%M') }}</small>
+                    <span class="font-mono" style="font-size: 10px; color: var(--text-muted); white-space: nowrap;">{{ log.created_at.strftime('%H:%M') }}</span>
                 </div>
                 {% if log.details %}
-                <small class="text-muted d-block text-truncate" style="max-width:100%;">{{ log.details }}</small>
+                <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ log.details }}</div>
                 {% endif %}
             </div>
             {% endfor %}
             {% else %}
-            <p class="text-muted">No logs yet.</p>
+            <div style="text-align: center; padding: 30px 0; color: var(--text-muted);" class="font-mono">// NO EVENTS</div>
             {% endif %}
         </div>
     </div>
 </div>
-
-<p class="text-muted small mt-3">
-    <i class="bi bi-info-circle"></i> Auto-refresh every 30 seconds.
-</p>
 {% endblock %}
 
 {% block extra_js %}
-<script>
-setTimeout(() => window.location.reload(), 30000);
-</script>
+<script>setTimeout(() => window.location.reload(), 30000);</script>
 {% endblock %}

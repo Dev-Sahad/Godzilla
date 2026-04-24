@@ -53,6 +53,10 @@ from handlers.ai_features import askai_cmd, script_cmd, aisearch_cmd
 from handlers.cloud_sync import (
     cloudsync_cmd, cloudstatus_cmd, clouddisconnect_cmd, cloud_callback,
 )
+from handlers.feedback import (
+    feedback_cmd, bug_cmd, suggest_cmd, myreports_cmd,
+    feedback_callback, maybe_handle_feedback,
+)
 from admin_panel import start_server_in_thread, set_bot_app
 from config import WEB_PANEL_URL
 
@@ -125,6 +129,9 @@ async def text_router(update, context):
     # First check: is this a UTR response?
     if await maybe_handle_utr(update, context):
         return
+    # Second check: is this feedback input?
+    if await maybe_handle_feedback(update, context):
+        return
     # Otherwise treat as URL
     await handle_url(update, context)
 
@@ -143,8 +150,34 @@ def main():
         logger.error(f"❌ Database init failed: {e}")
         return
 
-    # Build application
-    app = Application.builder().token(BOT_TOKEN).post_init(post_init).build()
+    # Self-update yt-dlp to latest version (handles YouTube/IG API changes)
+    # Non-blocking — failures are logged but don't stop bot startup
+    try:
+        import subprocess
+        result = subprocess.run(
+            ["pip", "install", "--upgrade", "--quiet", "yt-dlp"],
+            capture_output=True, text=True, timeout=60,
+        )
+        if result.returncode == 0:
+            import yt_dlp as _ydl
+            logger.info(f"✅ yt-dlp version: {_ydl.version.__version__}")
+        else:
+            logger.warning(f"yt-dlp update skipped: {result.stderr[:200]}")
+    except Exception as e:
+        logger.warning(f"yt-dlp self-update skipped: {e}")
+
+    # Build application with extended timeouts for large video uploads
+    app = (
+        Application.builder()
+        .token(BOT_TOKEN)
+        .post_init(post_init)
+        .read_timeout(180)           # 3 min to read Telegram response
+        .write_timeout(180)          # 3 min to upload file to Telegram
+        .connect_timeout(30)         # 30s to establish connection
+        .pool_timeout(30)            # 30s to grab connection from pool
+        .get_updates_read_timeout(40)  # polling timeout
+        .build()
+    )
 
     # ===== ACTIVITY TRACKER (group -1 — runs first, doesn't block other handlers) =====
     app.add_handler(MessageHandler(filters.ALL, activity_tracker), group=-1)
@@ -193,6 +226,12 @@ def main():
     app.add_handler(CommandHandler("cloudstatus", cloudstatus_cmd))
     app.add_handler(CommandHandler("clouddisconnect", clouddisconnect_cmd))
 
+    # ===== v3.6: FEEDBACK SYSTEM =====
+    app.add_handler(CommandHandler("feedback", feedback_cmd))
+    app.add_handler(CommandHandler("bug", bug_cmd))
+    app.add_handler(CommandHandler("suggest", suggest_cmd))
+    app.add_handler(CommandHandler("myreports", myreports_cmd))
+
     # ===== DOWNLOAD COMMANDS =====
     app.add_handler(CommandHandler("quality", quality_cmd))
     app.add_handler(CommandHandler("thumb", thumb_cmd))
@@ -237,6 +276,7 @@ def main():
     app.add_handler(CallbackQueryHandler(profile_callback, pattern="^profile_"))
     app.add_handler(CallbackQueryHandler(friend_callback, pattern="^friend_"))
     app.add_handler(CallbackQueryHandler(cloud_callback, pattern="^cloud_"))
+    app.add_handler(CallbackQueryHandler(feedback_callback, pattern="^fb_"))
 
     # ===== TEXT HANDLER (always last — routes UTR vs URL) =====
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, text_router))

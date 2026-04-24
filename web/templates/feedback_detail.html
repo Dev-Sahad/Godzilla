@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+{% block title %}FB-{{ fb.id }} // GODZILLA{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <div class="breadcrumb-mono">SYSTEM / FEEDBACK / TICKET</div>
+        <h2>TICKET #FB-{{ fb.id }}</h2>
+    </div>
+    <a href="{{ url_for('feedback_list') }}" class="btn btn-outline-primary">
+        <i class="bi bi-arrow-left"></i> BACK
+    </a>
+</div>
+
+<div class="row g-3">
+    <!-- Main content -->
+    <div class="col-lg-8">
+        <!-- Subject card -->
+        <div class="card" style="padding: 28px; margin-bottom: 20px;">
+            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px; flex-wrap: wrap;">
+                {% if fb.feedback_type == 'bug' %}<span class="badge bg-danger">🐛 BUG REPORT</span>
+                {% elif fb.feedback_type == 'suggestion' %}<span class="badge bg-warning">💡 FEATURE SUGGESTION</span>
+                {% elif fb.feedback_type == 'praise' %}<span class="badge bg-success">❤️ PRAISE</span>
+                {% else %}<span class="badge bg-info">💬 OTHER</span>
+                {% endif %}
+
+                {% if fb.priority == 'critical' %}<span class="badge bg-danger">CRITICAL</span>
+                {% elif fb.priority == 'high' %}<span class="badge bg-warning">HIGH PRIORITY</span>
+                {% elif fb.priority == 'low' %}<span class="badge bg-secondary">LOW PRIORITY</span>
+                {% else %}<span class="badge bg-info">NORMAL</span>
+                {% endif %}
+
+                {% if fb.status == 'new' %}<span class="badge bg-info">NEW</span>
+                {% elif fb.status == 'reviewing' %}<span class="badge bg-warning">REVIEWING</span>
+                {% elif fb.status == 'resolved' %}<span class="badge bg-success">RESOLVED</span>
+                {% else %}<span class="badge bg-danger">REJECTED</span>
+                {% endif %}
+            </div>
+
+            <h3 style="font-size: 18px; letter-spacing: 0.04em; margin-bottom: 20px;">{{ fb.subject }}</h3>
+
+            <div class="breadcrumb-mono" style="margin-bottom: 6px;">USER MESSAGE</div>
+            <div style="background: rgba(5, 7, 10, 0.5); padding: 20px; border-left: 3px solid var(--neon-lime); font-family: 'DM Sans', sans-serif; font-size: 14px; line-height: 1.7; color: var(--text-primary); white-space: pre-wrap; border-radius: 2px;">{{ fb.message }}</div>
+        </div>
+
+        <!-- Reply section -->
+        <div class="card" style="padding: 28px;">
+            <div class="breadcrumb-mono" style="margin-bottom: 6px;">RESPOND</div>
+            <h5 style="font-size: 14px; letter-spacing: 0.1em; margin-bottom: 16px;">
+                <i class="bi bi-reply-fill"></i> SEND REPLY TO USER
+            </h5>
+
+            {% if fb.admin_reply %}
+            <div class="alert alert-success" style="margin-bottom: 20px;">
+                <div class="breadcrumb-mono" style="margin-bottom: 6px;">PREVIOUS REPLY</div>
+                <div style="white-space: pre-wrap;">{{ fb.admin_reply }}</div>
+            </div>
+            {% endif %}
+
+            <form method="POST" action="{{ url_for('feedback_action', fb_id=fb.id) }}">
+                <input type="hidden" name="action" value="reply">
+                <div class="mb-3">
+                    <label class="form-label">◦ Reply Message (sent to user via Telegram)</label>
+                    <textarea name="reply" class="form-control" rows="5" required
+                              placeholder="Thanks for the report! We've fixed this in the latest update..."></textarea>
+                </div>
+                <button type="submit" class="btn btn-godzilla">
+                    <i class="bi bi-send-fill"></i> SEND REPLY
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="col-lg-4">
+        <!-- User info -->
+        <div class="card" style="padding: 20px; margin-bottom: 16px;">
+            <div class="breadcrumb-mono" style="margin-bottom: 6px;">SUBMITTED BY</div>
+            <h5 style="font-size: 14px; letter-spacing: 0.1em; margin-bottom: 16px;">OPERATOR</h5>
+
+            {% if user %}
+            <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 14px;">
+                <span style="font-size: 36px;">{{ user.avatar_emoji or '🦖' }}</span>
+                <div>
+                    <div style="font-weight: 500;">{{ user.display_name or user.first_name or 'Unknown' }}</div>
+                    {% if user.username %}
+                    <div class="font-mono" style="font-size: 10px; color: var(--text-dim);">@{{ user.username }}</div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="font-mono" style="font-size: 11px; line-height: 1.8;">
+                <div><span style="color: var(--text-dim);">TELEGRAM:</span> <code>{{ user.telegram_id }}</code></div>
+                <div><span style="color: var(--text-dim);">JOINED:</span> {{ user.joined_at.strftime('%Y-%m-%d') }}</div>
+                <div><span style="color: var(--text-dim);">DOWNLOADS:</span> {{ user.total_downloads }}</div>
+                <div><span style="color: var(--text-dim);">STATUS:</span>
+                    {% if user.is_banned %}<span class="text-danger">BANNED</span>
+                    {% elif user.is_premium %}<span class="text-warning">PREMIUM</span>
+                    {% else %}<span class="text-muted">FREE</span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <a href="{{ url_for('user_detail', user_id=user.id) }}" class="btn btn-outline-primary btn-sm w-100" style="margin-top: 14px;">
+                VIEW FULL PROFILE
+            </a>
+            {% else %}
+            <div class="font-mono" style="font-size: 12px; color: var(--text-muted);">
+                TG: <code>{{ fb.telegram_id }}</code><br>
+                @{{ fb.username or '—' }}
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Actions -->
+        <div class="card" style="padding: 20px; margin-bottom: 16px;">
+            <div class="breadcrumb-mono" style="margin-bottom: 6px;">ACTIONS</div>
+            <h5 style="font-size: 14px; letter-spacing: 0.1em; margin-bottom: 16px;">TICKET CONTROL</h5>
+
+            <!-- Status -->
+            <form method="POST" action="{{ url_for('feedback_action', fb_id=fb.id) }}" style="margin-bottom: 14px;">
+                <input type="hidden" name="action" value="update_status">
+                <label class="form-label">◦ Status</label>
+                <select name="status" class="form-select" onchange="this.form.submit()">
+                    <option value="new" {% if fb.status == 'new' %}selected{% endif %}>NEW</option>
+                    <option value="reviewing" {% if fb.status == 'reviewing' %}selected{% endif %}>REVIEWING</option>
+                    <option value="resolved" {% if fb.status == 'resolved' %}selected{% endif %}>RESOLVED</option>
+                    <option value="rejected" {% if fb.status == 'rejected' %}selected{% endif %}>REJECTED</option>
+                </select>
+            </form>
+
+            <!-- Priority -->
+            <form method="POST" action="{{ url_for('feedback_action', fb_id=fb.id) }}" style="margin-bottom: 14px;">
+                <input type="hidden" name="action" value="update_priority">
+                <label class="form-label">◦ Priority</label>
+                <select name="priority" class="form-select" onchange="this.form.submit()">
+                    <option value="low" {% if fb.priority == 'low' %}selected{% endif %}>LOW</option>
+                    <option value="normal" {% if fb.priority == 'normal' %}selected{% endif %}>NORMAL</option>
+                    <option value="high" {% if fb.priority == 'high' %}selected{% endif %}>HIGH</option>
+                    <option value="critical" {% if fb.priority == 'critical' %}selected{% endif %}>CRITICAL</option>
+                </select>
+            </form>
+
+            <!-- Delete -->
+            <form method="POST" action="{{ url_for('feedback_action', fb_id=fb.id) }}"
+                  onsubmit="return confirm('Permanently delete this report?')">
+                <input type="hidden" name="action" value="delete">
+                <button type="submit" class="btn btn-outline-danger w-100">
+                    <i class="bi bi-trash"></i> DELETE REPORT
+                </button>
+            </form>
+        </div>
+
+        <!-- Timeline -->
+        <div class="card" style="padding: 20px;">
+            <div class="breadcrumb-mono" style="margin-bottom: 6px;">TIMELINE</div>
+            <h5 style="font-size: 14px; letter-spacing: 0.1em; margin-bottom: 16px;">HISTORY</h5>
+
+            <div class="font-mono" style="font-size: 11px; line-height: 1.8;">
+                <div>
+                    <span style="color: var(--neon-lime);">●</span>
+                    <span style="color: var(--text-dim);">CREATED:</span>
+                    {{ fb.created_at.strftime('%Y-%m-%d · %H:%M') }}
+                </div>
+                {% if fb.resolved_at %}
+                <div>
+                    <span style="color: var(--neon-cyan);">●</span>
+                    <span style="color: var(--text-dim);">RESOLVED:</span>
+                    {{ fb.resolved_at.strftime('%Y-%m-%d · %H:%M') }}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

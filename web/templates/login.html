@@ -1,38 +1,59 @@
 {% extends "base.html" %}
-{% block title %}Login — GODZILLA Admin{% endblock %}
+{% block title %}GODZILLA // Authenticate{% endblock %}
 
-{% block auth_content %}
-<div class="d-flex align-items-center justify-content-center" style="min-height: 100vh;">
-    <div class="card p-5" style="max-width: 420px; width: 100%;">
-        <div class="text-center mb-4">
-            <div style="font-size: 3rem;">🦖</div>
-            <h2 class="logo-godzilla mt-2">GODZILLA</h2>
-            <p class="text-muted">Admin Control Panel</p>
+{% block login_content %}
+<div style="width: 100%; max-width: 440px; position: relative;">
+    <!-- Decorative corner brackets -->
+    <div style="position: absolute; top: -12px; left: -12px; width: 30px; height: 30px; border-top: 2px solid var(--neon-lime); border-left: 2px solid var(--neon-lime);"></div>
+    <div style="position: absolute; top: -12px; right: -12px; width: 30px; height: 30px; border-top: 2px solid var(--neon-lime); border-right: 2px solid var(--neon-lime);"></div>
+    <div style="position: absolute; bottom: -12px; left: -12px; width: 30px; height: 30px; border-bottom: 2px solid var(--neon-lime); border-left: 2px solid var(--neon-lime);"></div>
+    <div style="position: absolute; bottom: -12px; right: -12px; width: 30px; height: 30px; border-bottom: 2px solid var(--neon-lime); border-right: 2px solid var(--neon-lime);"></div>
+
+    <div class="glass-panel" style="padding: 48px 40px;">
+        <div style="text-align: center; margin-bottom: 36px;">
+            <div style="display: inline-flex; align-items: center; gap: 16px; margin-bottom: 24px;">
+                <div class="brand-logo" style="width: 48px; height: 48px; font-size: 24px;">G</div>
+                <div style="text-align: left;">
+                    <div class="font-display" style="font-size: 18px; font-weight: 700; letter-spacing: 0.2em;">GODZILLA</div>
+                    <div class="font-mono" style="font-size: 9px; color: var(--neon-lime); letter-spacing: 0.25em; margin-top: 2px;">CONTROL ROOM</div>
+                </div>
+            </div>
+
+            <div class="font-mono" style="font-size: 11px; color: var(--text-muted); letter-spacing: 0.2em; text-transform: uppercase; margin-bottom: 8px;">
+                ◆ Authentication Required ◆
+            </div>
+            <div class="font-mono" style="font-size: 11px; color: var(--text-dim);">
+                > access_level = <span style="color: var(--neon-lime);">ADMIN</span>
+            </div>
         </div>
-
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% for category, msg in messages %}
-                <div class="alert alert-{{ category }}">{{ msg }}</div>
-            {% endfor %}
-        {% endwith %}
 
         <form method="POST">
             <div class="mb-3">
-                <label class="form-label">Username</label>
-                <input type="text" name="username" class="form-control bg-dark text-light" required autofocus>
+                <label class="form-label">◦ Operator ID</label>
+                <input type="text" class="form-control" name="username" required autofocus
+                       placeholder="admin" autocomplete="username">
             </div>
-            <div class="mb-3">
-                <label class="form-label">Password</label>
-                <input type="password" name="password" class="form-control bg-dark text-light" required>
+            <div class="mb-4">
+                <label class="form-label">◦ Passkey</label>
+                <input type="password" class="form-control" name="password" required
+                       placeholder="••••••••" autocomplete="current-password">
             </div>
-            <button type="submit" class="btn btn-godzilla w-100 fw-bold">
-                <i class="bi bi-box-arrow-in-right"></i> Login
+            <button type="submit" class="btn btn-godzilla w-100" style="padding: 12px; letter-spacing: 0.3em;">
+                <i class="bi bi-shield-lock-fill"></i> AUTHENTICATE
             </button>
         </form>
 
-        <p class="text-muted text-center small mt-4 mb-0">
-            Developer: Sxhd • SHA COMMUNITY
-        </p>
+        <div style="text-align: center; margin-top: 32px; padding-top: 20px; border-top: 1px dashed var(--border-subtle);">
+            <div class="font-mono" style="font-size: 9px; color: var(--text-dim); letter-spacing: 0.2em;">
+                <span style="color: var(--neon-lime);">●</span> SYSTEM ONLINE &nbsp;·&nbsp; ENCRYPTED CHANNEL
+            </div>
+        </div>
+    </div>
+
+    <div style="text-align: center; margin-top: 24px;" class="font-mono">
+        <small style="font-size: 10px; color: var(--text-dim); letter-spacing: 0.15em;">
+            ©2026 · BUILT BY <span style="color: var(--neon-lime);">@sahad_____sha</span>
+        </small>
     </div>
 </div>
 {% endblock %}

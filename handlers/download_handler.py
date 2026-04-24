@@ -323,8 +323,24 @@ async def perform_download(query, context, url, media_type, quality, platform, u
 
     except Exception as e:
         logger.error(f"Download error: {e}")
-        err = str(e)[:200]
-        await query.edit_message_text(f"❌ *Error:* `{err}`", parse_mode="Markdown")
+        err = str(e)[:250]
+
+        # Friendly error display
+        err_text = (
+            f"❌ *Download Failed*\n\n"
+            f"_{err}_\n\n"
+            f"━━━━━━━━━━━━━━━\n"
+            f"💡 *Tips:*\n"
+            f"• Try a shorter video\n"
+            f"• Try audio-only (smaller)\n"
+            f"• Wait 1-2 min if rate-limited\n"
+            f"• Make sure link is public"
+        )
+        try:
+            await query.edit_message_text(err_text, parse_mode="Markdown")
+        except Exception:
+            pass
+
         record_download(user_id, url, "Unknown", platform, media_type, quality, 0, "failed", err)
         await notify_error("Download", user_id, err)
     finally:

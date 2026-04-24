@@ -1,5 +1,5 @@
 python-telegram-bot==21.6
-yt-dlp
+yt-dlp>=2024.12.13
 python-dotenv
 sqlalchemy>=2.0
 psycopg2-binary

@@ -228,6 +228,27 @@ class CloudIntegration(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
 
+# ===== v3.6: FEEDBACK / BUG REPORTS =====
+
+class Feedback(Base):
+    """User-submitted bug reports and suggestions."""
+    __tablename__ = "feedback"
+
+    id = Column(Integer, primary_key=True)
+    telegram_id = Column(BigInteger, index=True, nullable=False)
+    username = Column(String(100), nullable=True)
+    first_name = Column(String(100), nullable=True)
+    feedback_type = Column(String(20), default="suggestion")   # bug, suggestion, praise, other
+    subject = Column(String(200), nullable=True)
+    message = Column(Text, nullable=False)
+    status = Column(String(20), default="new")                  # new, reviewing, resolved, rejected
+    priority = Column(String(20), default="normal")             # low, normal, high, critical
+    admin_reply = Column(Text, nullable=True)
+    admin_id = Column(BigInteger, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    resolved_at = Column(DateTime, nullable=True)
+
+
 class Settings(Base):
     """Key-value settings store for bot configuration."""
     __tablename__ = "settings"

@@ -938,6 +938,154 @@ def user_set_limit(user_id):
     return redirect(url_for("user_detail", user_id=user_id))
 
 
+# ===== FEEDBACK MANAGEMENT (v3.6) =====
+
+@app.route("/admin/feedback")
+@login_required
+def feedback_list():
+    """List all feedback/bug reports/suggestions."""
+    from database.models import Feedback
+    db = get_session()
+
+    status_filter = request.args.get("status", "all")
+    type_filter = request.args.get("type", "all")
+
+    try:
+        q = db.query(Feedback)
+        if status_filter != "all":
+            q = q.filter_by(status=status_filter)
+        if type_filter != "all":
+            q = q.filter_by(feedback_type=type_filter)
+        reports = q.order_by(Feedback.created_at.desc()).limit(200).all()
+
+        counts = {
+            "new": db.query(Feedback).filter_by(status="new").count(),
+            "reviewing": db.query(Feedback).filter_by(status="reviewing").count(),
+            "resolved": db.query(Feedback).filter_by(status="resolved").count(),
+            "rejected": db.query(Feedback).filter_by(status="rejected").count(),
+            "bug": db.query(Feedback).filter_by(feedback_type="bug").count(),
+            "suggestion": db.query(Feedback).filter_by(feedback_type="suggestion").count(),
+            "praise": db.query(Feedback).filter_by(feedback_type="praise").count(),
+            "other": db.query(Feedback).filter_by(feedback_type="other").count(),
+        }
+        return render_template(
+            "feedback.html",
+            reports=reports,
+            counts=counts,
+            status_filter=status_filter,
+            type_filter=type_filter,
+        )
+    except Exception as e:
+        logger.error(f"Feedback list error: {e}")
+        flash(f"Error loading feedback: {e}", "danger")
+        return render_template("feedback.html", reports=[], counts={}, status_filter="all", type_filter="all")
+    finally:
+        db.close()
+
+
+@app.route("/admin/feedback/<int:fb_id>")
+@login_required
+def feedback_detail(fb_id):
+    """View a single feedback item."""
+    from database.models import Feedback
+    db = get_session()
+    try:
+        fb = db.query(Feedback).get(fb_id)
+        if not fb:
+            flash("Feedback not found", "danger")
+            return redirect(url_for("feedback_list"))
+
+        # Get user info
+        user = db.query(User).filter_by(telegram_id=fb.telegram_id).first()
+
+        return render_template("feedback_detail.html", fb=fb, user=user)
+    finally:
+        db.close()
+
+
+@app.route("/admin/feedback/<int:fb_id>/action", methods=["POST"])
+@login_required
+def feedback_action(fb_id):
+    """Update feedback status / priority / reply."""
+    from database.models import Feedback
+
+    action = request.form.get("action")
+    db = get_session()
+    try:
+        fb = db.query(Feedback).get(fb_id)
+        if not fb:
+            flash("Feedback not found", "danger")
+            return redirect(url_for("feedback_list"))
+
+        old_status = fb.status
+
+        if action == "update_status":
+            new_status = request.form.get("status")
+            if new_status in ["new", "reviewing", "resolved", "rejected"]:
+                fb.status = new_status
+                if new_status == "resolved":
+                    fb.resolved_at = datetime.utcnow()
+                flash(f"Status updated to {new_status}", "success")
+
+        elif action == "update_priority":
+            new_priority = request.form.get("priority")
+            if new_priority in ["low", "normal", "high", "critical"]:
+                fb.priority = new_priority
+                flash(f"Priority set to {new_priority}", "success")
+
+        elif action == "reply":
+            reply_text = request.form.get("reply", "").strip()
+            if not reply_text:
+                flash("Reply cannot be empty", "warning")
+                return redirect(url_for("feedback_detail", fb_id=fb_id))
+
+            fb.admin_reply = reply_text
+
+            # Notify user via bot
+            bot_loop = _bot_app.bot_data.get("event_loop") if _bot_app and hasattr(_bot_app, "bot_data") else None
+            if _bot_app and bot_loop:
+                try:
+                    type_emoji_map = {"bug": "🐛", "suggestion": "💡", "praise": "❤️", "other": "💬"}
+                    emoji_char = type_emoji_map.get(fb.feedback_type, "💬")
+                    reply_msg_text = (
+                        f"{emoji_char} *Admin replied to your report*\n"
+                        f"━━━━━━━━━━━━━━━\n\n"
+                        f"🎫 *Ticket:* `#FB-{fb.id}`\n"
+                        f"📌 *Subject:* {fb.subject}\n\n"
+                        f"*💬 Admin Reply:*\n_{reply_text}_\n\n"
+                        f"━━━━━━━━━━━━━━━\n"
+                        f"_Thank you for your feedback! 🦖_"
+                    )
+
+                    async def _send():
+                        await _bot_app.bot.send_message(
+                            chat_id=fb.telegram_id,
+                            text=reply_msg_text,
+                            parse_mode="Markdown",
+                        )
+
+                    import asyncio
+                    future = asyncio.run_coroutine_threadsafe(_send(), bot_loop)
+                    future.result(timeout=10)
+                    flash("Reply sent to user via Telegram", "success")
+                except Exception as e:
+                    logger.error(f"Failed to send reply: {e}")
+                    flash(f"Saved but delivery failed: {e}", "warning")
+            else:
+                flash("Reply saved (bot offline, not delivered)", "warning")
+
+        elif action == "delete":
+            db.delete(fb)
+            db.commit()
+            flash("Feedback deleted", "success")
+            return redirect(url_for("feedback_list"))
+
+        db.commit()
+        return redirect(url_for("feedback_detail", fb_id=fb_id))
+    finally:
+        db.close()
+
+
 # ===== BACKUP / RESTORE (NEW v3.3) =====
 
 @app.route("/admin/backup")

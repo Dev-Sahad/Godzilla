@@ -1,97 +1,105 @@
 {% extends "base.html" %}
-{% block title %}Referrals — GODZILLA{% endblock %}
+{% block title %}REFERRALS // GODZILLA{% endblock %}
 
 {% block content %}
-<h2><i class="bi bi-people-fill"></i> Referral Program</h2>
-<p class="text-muted mb-4">Track who's inviting friends.</p>
+<div class="page-header">
+    <div>
+        <div class="breadcrumb-mono">SYSTEM / OPERATIONS / REFERRALS</div>
+        <h2>INVITE NETWORK</h2>
+    </div>
+</div>
 
 <div class="row g-3 mb-4">
-    <div class="col-md-4">
-        <div class="stat-card p-3">
-            <div class="stat-label">Total Referrals</div>
+    <div class="col-md-4 col-6">
+        <div class="stat-card">
+            <div class="stat-label"><i class="bi bi-diagram-3-fill"></i> TOTAL REFERRALS</div>
             <div class="stat-value">{{ total_referrals }}</div>
+            <div class="stat-delta">INVITED USERS</div>
         </div>
     </div>
-    <div class="col-md-4">
-        <div class="stat-card p-3">
-            <div class="stat-label">Active Referrers</div>
+    <div class="col-md-4 col-6">
+        <div class="stat-card accent-cyan">
+            <div class="stat-label"><i class="bi bi-people-fill"></i> ACTIVE INVITERS</div>
             <div class="stat-value">{{ total_referrers }}</div>
+            <div class="stat-delta">USERS WITH REFERRALS</div>
         </div>
     </div>
-    <div class="col-md-4">
-        <div class="stat-card p-3">
-            <div class="stat-label">Avg Referrals / Referrer</div>
+    <div class="col-md-4 col-12">
+        <div class="stat-card accent-amber">
+            <div class="stat-label"><i class="bi bi-graph-up-arrow"></i> AVG PER INVITER</div>
             <div class="stat-value">
                 {{ (total_referrals / total_referrers)|round(1) if total_referrers else 0 }}
             </div>
+            <div class="stat-delta">CONVERSION RATIO</div>
         </div>
     </div>
 </div>
 
 <div class="row g-3">
     <div class="col-md-7">
-        <div class="card p-4">
-            <h5 class="mb-3">🏆 Top Referrers</h5>
+        <div class="card" style="padding: 24px;">
+            <div class="breadcrumb-mono" style="margin-bottom: 6px;">LEADERBOARD</div>
+            <h5 style="font-size: 13px; letter-spacing: 0.1em; margin-bottom: 16px;">TOP AMBASSADORS</h5>
             {% if top_referrers %}
-            <table class="table table-dark">
+            <table class="table mb-0">
                 <thead>
                     <tr>
-                        <th>#</th><th>User</th><th>Username</th>
-                        <th class="text-end">Referrals</th>
-                        <th>Reward?</th>
+                        <th>RANK</th>
+                        <th>OPERATOR</th>
+                        <th>USERNAME</th>
+                        <th style="text-align: right;">INVITES</th>
+                        <th style="text-align: center;">REWARD</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {% for user in top_referrers %}
-                    <tr>
-                        <td>{{ loop.index }}</td>
-                        <td>
-                            <a href="{{ url_for('user_detail', user_id=user.id) }}">
-                                {{ user.first_name or '—' }}
-                            </a>
-                        </td>
-                        <td>@{{ user.username or '—' }}</td>
-                        <td class="text-end">
-                            <span class="badge bg-success">{{ user.referral_count }}</span>
-                        </td>
-                        <td>
-                            {% if user.referral_reward_claimed %}
-                                <span class="badge bg-warning text-dark">✓ Claimed</span>
-                            {% else %}
-                                <span class="text-muted">Pending</span>
-                            {% endif %}
-                        </td>
-                    </tr>
-                    {% endfor %}
+                {% for user in top_referrers %}
+                <tr>
+                    <td class="font-mono" style="color: var(--neon-amber); font-weight: 700;">#{{ loop.index }}</td>
+                    <td>
+                        <a href="{{ url_for('user_detail', user_id=user.id) }}">
+                            {{ user.first_name or '—' }}
+                        </a>
+                    </td>
+                    <td class="font-mono text-muted">@{{ user.username or '—' }}</td>
+                    <td style="text-align: right;">
+                        <span class="badge bg-success">{{ user.referral_count }}</span>
+                    </td>
+                    <td style="text-align: center;">
+                        {% if user.referral_reward_claimed %}
+                            <span class="badge bg-warning">CLAIMED</span>
+                        {% else %}
+                            <span class="font-mono text-muted" style="font-size: 10px;">PENDING</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
                 </tbody>
             </table>
             {% else %}
-            <p class="text-muted">No referrers yet.</p>
+            <div style="text-align: center; padding: 40px 0; color: var(--text-muted);" class="font-mono">// NO AMBASSADORS YET</div>
             {% endif %}
         </div>
     </div>
 
     <div class="col-md-5">
-        <div class="card p-4">
-            <h5 class="mb-3">🆕 Recent Referred Users</h5>
+        <div class="card" style="padding: 24px;">
+            <div class="breadcrumb-mono" style="margin-bottom: 6px;">RECENT INVITES</div>
+            <h5 style="font-size: 13px; letter-spacing: 0.1em; margin-bottom: 16px;">NEW REFERRED USERS</h5>
             {% if recent_refs %}
-            <ul class="list-unstyled mb-0">
-                {% for user in recent_refs %}
-                <li class="border-bottom border-secondary py-2">
-                    <div class="d-flex justify-content-between">
-                        <div>
-                            <strong>{{ user.first_name or '—' }}</strong>
-                            <small class="text-muted d-block">@{{ user.username or '—' }}</small>
-                        </div>
-                        <small class="text-muted">
-                            by <code>{{ user.referred_by }}</code>
-                        </small>
-                    </div>
-                </li>
-                {% endfor %}
-            </ul>
+            {% for user in recent_refs %}
+            <div style="padding: 10px 0; border-bottom: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <div style="font-weight: 500; font-size: 13px;">{{ user.first_name or '—' }}</div>
+                    <div class="font-mono" style="font-size: 10px; color: var(--text-dim);">@{{ user.username or '—' }}</div>
+                </div>
+                <div style="text-align: right;">
+                    <div class="font-mono" style="font-size: 10px; color: var(--text-muted);">INVITED BY</div>
+                    <code style="font-size: 10px;">{{ user.referred_by }}</code>
+                </div>
+            </div>
+            {% endfor %}
             {% else %}
-            <p class="text-muted mb-0">No referrals yet.</p>
+            <div style="text-align: center; padding: 40px 0; color: var(--text-muted);" class="font-mono">// NO REFERRALS</div>
             {% endif %}
         </div>
     </div>

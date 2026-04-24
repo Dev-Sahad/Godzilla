@@ -62,6 +62,11 @@ USER_COMMANDS = [
     BotCommand("qr", "🔲 Generate QR code"),
     BotCommand("short", "🔗 Shorten a URL"),
     BotCommand("tr", "🌐 Translate text"),
+    # Feedback
+    BotCommand("feedback", "📬 Send feedback / report"),
+    BotCommand("bug", "🐛 Report a bug"),
+    BotCommand("suggest", "💡 Suggest a feature"),
+    BotCommand("myreports", "📋 My submitted reports"),
 ]
 
 

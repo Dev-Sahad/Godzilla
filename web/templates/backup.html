@@ -1,34 +1,42 @@
 {% extends "base.html" %}
-{% block title %}Backup & Restore — GODZILLA{% endblock %}
+{% block title %}BACKUP VAULT // GODZILLA{% endblock %}
 
 {% block content %}
-<h2><i class="bi bi-cloud-download"></i> Backup & Restore</h2>
-<p class="text-muted mb-4">Export all your data or restore from a backup file.</p>
+<div class="page-header">
+    <div>
+        <div class="breadcrumb-mono">SYSTEM / BACKUP VAULT</div>
+        <h2>DATA VAULT</h2>
+    </div>
+</div>
 
 <!-- Current Data Stats -->
 <div class="row g-3 mb-4">
-    <div class="col-md-3">
-        <div class="stat-card p-3">
-            <div class="stat-label">Users</div>
+    <div class="col-md-3 col-6">
+        <div class="stat-card">
+            <div class="stat-label"><i class="bi bi-people-fill"></i> USERS</div>
             <div class="stat-value">{{ counts.users }}</div>
+            <div class="stat-delta">OPERATORS</div>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="stat-card p-3">
-            <div class="stat-label">Plans</div>
+    <div class="col-md-3 col-6">
+        <div class="stat-card accent-cyan">
+            <div class="stat-label"><i class="bi bi-diamond-fill"></i> PLANS</div>
             <div class="stat-value">{{ counts.plans }}</div>
+            <div class="stat-delta">SUBSCRIPTIONS</div>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="stat-card p-3">
-            <div class="stat-label">Downloads</div>
+    <div class="col-md-3 col-6">
+        <div class="stat-card accent-amber">
+            <div class="stat-label"><i class="bi bi-download"></i> DOWNLOADS</div>
             <div class="stat-value">{{ counts.downloads }}</div>
+            <div class="stat-delta">RECORDS</div>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="stat-card p-3">
-            <div class="stat-label">Payments</div>
+    <div class="col-md-3 col-6">
+        <div class="stat-card accent-magenta">
+            <div class="stat-label"><i class="bi bi-cash-stack"></i> PAYMENTS</div>
             <div class="stat-value">{{ counts.payment_requests }}</div>
+            <div class="stat-delta">TRANSACTIONS</div>
         </div>
     </div>
 </div>
@@ -36,56 +44,66 @@
 <div class="row g-3">
     <!-- EXPORT -->
     <div class="col-md-6">
-        <div class="card p-4">
-            <h4><i class="bi bi-download"></i> Export Data</h4>
-            <p class="text-muted">Download all your data as a JSON backup file.</p>
-            <p class="small">
-                <strong>Includes:</strong><br>
-                ✓ User profiles (bio, badges, limits)<br>
-                ✓ Subscription plans (all categories)<br>
-                ✓ Settings<br>
-                ✓ Payment history<br>
-                ✓ Admin users (no passwords)<br>
-                <span class="text-muted">✗ Downloads history (too large)</span><br>
-                <span class="text-muted">✗ Passwords (for security)</span>
+        <div class="card" style="padding: 28px; height: 100%;">
+            <div class="breadcrumb-mono" style="margin-bottom: 6px;">EXPORT</div>
+            <h4 style="font-size: 16px; letter-spacing: 0.08em; margin-bottom: 16px;">
+                <i class="bi bi-cloud-download-fill"></i> DOWNLOAD ARCHIVE
+            </h4>
+            <p class="font-mono" style="font-size: 12px; color: var(--text-muted); margin-bottom: 20px;">
+                // Export complete system state as JSON.
             </p>
-            <a href="{{ url_for('backup_export') }}" class="btn btn-godzilla fw-bold w-100">
-                <i class="bi bi-cloud-download"></i> Download Backup (.json)
+
+            <div class="font-mono" style="font-size: 11px; margin-bottom: 20px; line-height: 1.8;">
+                <div><span style="color: var(--neon-lime);">✓</span> User profiles (bio, badges, limits)</div>
+                <div><span style="color: var(--neon-lime);">✓</span> Subscription plans (all categories)</div>
+                <div><span style="color: var(--neon-lime);">✓</span> System settings</div>
+                <div><span style="color: var(--neon-lime);">✓</span> Payment history</div>
+                <div><span style="color: var(--neon-lime);">✓</span> Admin users (hashed passwords excluded)</div>
+                <div><span style="color: var(--neon-magenta);">✗</span> <span style="color: var(--text-muted);">Downloads history (excluded for size)</span></div>
+                <div><span style="color: var(--neon-magenta);">✗</span> <span style="color: var(--text-muted);">Credentials (security)</span></div>
+            </div>
+
+            <a href="{{ url_for('backup_export') }}" class="btn btn-godzilla w-100">
+                <i class="bi bi-download"></i> EXPORT ARCHIVE
             </a>
-            <p class="small text-muted mt-2 mb-0">
-                💡 Tip: Download a backup weekly for safety.
-            </p>
+            <div class="font-mono" style="font-size: 10px; color: var(--text-muted); text-align: center; margin-top: 10px;">
+                // RECOMMEND WEEKLY BACKUPS
+            </div>
         </div>
     </div>
 
     <!-- RESTORE -->
     <div class="col-md-6">
-        <div class="card p-4">
-            <h4><i class="bi bi-upload"></i> Restore Data</h4>
-            <p class="text-muted">Upload a backup file to restore data.</p>
+        <div class="card" style="padding: 28px; height: 100%;">
+            <div class="breadcrumb-mono" style="margin-bottom: 6px;">IMPORT</div>
+            <h4 style="font-size: 16px; letter-spacing: 0.08em; margin-bottom: 16px;">
+                <i class="bi bi-cloud-upload-fill"></i> RESTORE FROM ARCHIVE
+            </h4>
+            <p class="font-mono" style="font-size: 12px; color: var(--text-muted); margin-bottom: 20px;">
+                // Upload JSON backup to restore system state.
+            </p>
 
             <form method="POST" action="{{ url_for('backup_restore') }}" enctype="multipart/form-data">
                 <div class="mb-3">
-                    <label class="form-label">Backup File (.json)</label>
-                    <input type="file" name="backup_file" class="form-control bg-dark text-light"
-                           accept=".json" required>
+                    <label class="form-label">◦ Backup File (.json)</label>
+                    <input type="file" name="backup_file" class="form-control" accept=".json" required>
                 </div>
 
                 <div class="mb-3">
-                    <label class="form-label">Restore Mode</label>
-                    <select name="mode" class="form-select bg-dark text-light">
-                        <option value="merge" selected>Merge — Keep existing, add new</option>
-                        <option value="replace">Replace — Overwrite existing</option>
+                    <label class="form-label">◦ Restore Mode</label>
+                    <select name="mode" class="form-select">
+                        <option value="merge" selected>MERGE · KEEP EXISTING, ADD NEW</option>
+                        <option value="replace">REPLACE · OVERWRITE EXISTING</option>
                     </select>
-                    <small class="text-muted">
-                        <strong>Merge:</strong> Skips plans that already exist<br>
-                        <strong>Replace:</strong> Overwrites plans (destructive)
-                    </small>
+                    <div class="font-mono" style="font-size: 10px; color: var(--text-muted); margin-top: 8px; line-height: 1.6;">
+                        // <strong>MERGE:</strong> Skips duplicates (safe)<br>
+                        // <strong>REPLACE:</strong> Overwrites duplicates (destructive)
+                    </div>
                 </div>
 
-                <button type="submit" class="btn btn-warning fw-bold w-100"
+                <button type="submit" class="btn btn-warning w-100"
                         onclick="return confirm('Restore data? This may modify existing records.')">
-                    <i class="bi bi-cloud-upload"></i> Restore from Backup
+                    <i class="bi bi-cloud-upload"></i> EXECUTE RESTORE
                 </button>
             </form>
         </div>
@@ -93,22 +111,26 @@
 </div>
 
 <div class="alert alert-info mt-4">
-    <h5><i class="bi bi-info-circle"></i> About Backups</h5>
-    <ul class="small mb-0">
-        <li><strong>Automatic:</strong> Your PostgreSQL on Railway is auto-backed up by Railway</li>
-        <li><strong>Manual:</strong> Use this page to download/upload backups anytime</li>
-        <li><strong>Portable:</strong> JSON format works across environments</li>
-        <li><strong>Safe:</strong> Passwords are NOT exported (re-set after restore)</li>
+    <h5 style="font-size: 12px; letter-spacing: 0.15em; margin: 0 0 10px;">
+        <i class="bi bi-info-circle-fill"></i> SYSTEM NOTES
+    </h5>
+    <ul class="font-mono" style="font-size: 11px; margin: 0; padding-left: 20px; line-height: 1.8;">
+        <li><strong>AUTOMATIC:</strong> Railway PostgreSQL auto-backs up daily</li>
+        <li><strong>MANUAL:</strong> Use this page for exports/imports anytime</li>
+        <li><strong>PORTABLE:</strong> JSON format works across environments</li>
+        <li><strong>SECURE:</strong> Passwords/tokens NOT exported (re-configure after restore)</li>
     </ul>
 </div>
 
 <div class="alert alert-warning mt-3">
-    <h5><i class="bi bi-shield-exclamation"></i> Important Notes</h5>
-    <ul class="small mb-0">
-        <li>Restore only updates <strong>existing users' profiles</strong> — doesn't create new users</li>
-        <li>Restore creates/updates <strong>plans and settings</strong> safely</li>
-        <li>Your bot must be running when you restore (for schema consistency)</li>
-        <li>Store backups securely — they contain user data</li>
+    <h5 style="font-size: 12px; letter-spacing: 0.15em; margin: 0 0 10px;">
+        <i class="bi bi-shield-exclamation"></i> CAUTION
+    </h5>
+    <ul class="font-mono" style="font-size: 11px; margin: 0; padding-left: 20px; line-height: 1.8;">
+        <li>Restore only updates <strong>existing user profiles</strong> — won't create new users</li>
+        <li>Plans and settings are <strong>created or updated</strong> as needed</li>
+        <li>Bot must be <strong>running</strong> during restore</li>
+        <li>Store backups <strong>securely</strong> — contains user data</li>
     </ul>
 </div>
 {% endblock %}

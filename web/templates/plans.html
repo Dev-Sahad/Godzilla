@@ -1,20 +1,23 @@
 {% extends "base.html" %}
-{% block title %}Plans — GODZILLA{% endblock %}
+{% block title %}PLANS // GODZILLA{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h2><i class="bi bi-tag"></i> Subscription Plans</h2>
+<div class="page-header">
+    <div>
+        <div class="breadcrumb-mono">SYSTEM / OPERATIONS / PLANS</div>
+        <h2>SUBSCRIPTION TIERS</h2>
+    </div>
     <a href="{{ url_for('plan_new') }}" class="btn btn-godzilla">
-        <i class="bi bi-plus-circle"></i> New Plan
+        <i class="bi bi-plus-circle-fill"></i> NEW TIER
     </a>
 </div>
 
 {% set categories = {
-    'basic': ('🆓 Basic', 'secondary'),
-    'premium': ('💎 Premium', 'warning'),
-    'pro': ('🔥 Pro', 'danger'),
-    'lifetime': ('👑 Lifetime', 'info'),
-    'custom': ('⚡ Custom', 'success')
+    'basic': ('🆓 BASIC TIER', 'secondary'),
+    'premium': ('💎 PREMIUM TIER', 'warning'),
+    'pro': ('🔥 PRO TIER', 'danger'),
+    'lifetime': ('👑 LIFETIME', 'info'),
+    'custom': ('⚡ CUSTOM', 'success')
 } %}
 
 {% set grouped = {} %}
@@ -27,56 +30,67 @@
 {% if plans %}
     {% for cat_key, (cat_name, cat_color) in categories.items() %}
         {% if grouped.get(cat_key) %}
-        <div class="card p-3 mb-3">
-            <h5 class="mb-3">
-                <span class="badge bg-{{ cat_color }}">{{ cat_name }}</span>
-                <span class="text-muted small">({{ grouped[cat_key]|length }} plans)</span>
-            </h5>
-            <table class="table table-dark table-hover mb-0">
+        <div class="card" style="padding: 24px; margin-bottom: 20px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px;">
+                <div>
+                    <div class="breadcrumb-mono" style="margin-bottom: 4px;">CATEGORY</div>
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <span class="badge bg-{{ cat_color }}">{{ cat_name }}</span>
+                        <span class="font-mono" style="font-size: 11px; color: var(--text-muted);">
+                            {{ grouped[cat_key]|length }} TIER{% if grouped[cat_key]|length != 1 %}S{% endif %}
+                        </span>
+                    </div>
+                </div>
+            </div>
+            <table class="table mb-0">
                 <thead>
                     <tr>
-                        <th>#</th>
-                        <th>Key</th>
-                        <th>Name</th>
-                        <th>Badge</th>
-                        <th>Amount</th>
-                        <th>Duration</th>
-                        <th>Daily Limit</th>
-                        <th>Status</th>
-                        <th>Actions</th>
+                        <th style="width: 40px;">#</th>
+                        <th>KEY</th>
+                        <th>NAME</th>
+                        <th>BADGE</th>
+                        <th style="text-align: right;">PRICE</th>
+                        <th style="text-align: right;">DURATION</th>
+                        <th style="text-align: right;">LIMIT</th>
+                        <th style="text-align: center;">STATE</th>
+                        <th style="text-align: right;">ACTIONS</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for p in grouped[cat_key] %}
                     <tr>
-                        <td>{{ p.sort_order }}</td>
+                        <td class="font-mono text-muted">{{ p.sort_order }}</td>
                         <td><code>{{ p.key }}</code></td>
-                        <td>{{ p.name }}</td>
+                        <td style="font-weight: 500;">{{ p.name }}</td>
                         <td>
                             {% if p.badge %}
-                                <span class="badge bg-warning text-dark">{{ p.badge }}</span>
+                                <span class="badge bg-warning">{{ p.badge }}</span>
                             {% else %}
-                                <span class="text-muted">—</span>
+                                <span class="font-mono text-muted">—</span>
                             {% endif %}
                         </td>
-                        <td>₹{{ p.amount }}</td>
-                        <td>{{ p.duration_days }} days</td>
-                        <td>{{ p.daily_limit }}</td>
-                        <td>
+                        <td style="text-align: right;">
+                            <span class="font-mono" style="color: var(--neon-lime); font-size: 14px; font-weight: 500;">₹{{ p.amount }}</span>
+                        </td>
+                        <td style="text-align: right;" class="font-mono text-muted">{{ p.duration_days }}d</td>
+                        <td style="text-align: right;" class="font-mono text-muted">{{ p.daily_limit }}/day</td>
+                        <td style="text-align: center;">
                             {% if p.is_active %}
-                                <span class="badge bg-success">Active</span>
+                                <span class="badge bg-success">ACTIVE</span>
                             {% else %}
-                                <span class="badge bg-secondary">Inactive</span>
+                                <span class="badge bg-secondary">PAUSED</span>
                             {% endif %}
                         </td>
-                        <td>
-                            <a href="{{ url_for('plan_edit', plan_id=p.id) }}" class="btn btn-sm btn-outline-primary">
-                                <i class="bi bi-pencil"></i>
-                            </a>
-                            <form method="POST" action="{{ url_for('plan_delete', plan_id=p.id) }}" class="d-inline"
-                                  onsubmit="return confirm('Delete this plan?')">
-                                <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
-                            </form>
+                        <td style="text-align: right;">
+                            <div style="display: inline-flex; gap: 6px;">
+                                <a href="{{ url_for('plan_edit', plan_id=p.id) }}" class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <form method="POST" action="{{ url_for('plan_delete', plan_id=p.id) }}" style="display: inline;"
+                                      onsubmit="return confirm('Delete this tier?')">
+                                    <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+                                </form>
+                            </div>
                         </td>
                     </tr>
                     {% endfor %}
@@ -86,12 +100,18 @@
         {% endif %}
     {% endfor %}
 {% else %}
-    <div class="card p-5 text-center">
-        <p class="text-muted">No plans yet. Click <strong>New Plan</strong> to create one.</p>
+    <div class="card" style="padding: 60px; text-align: center;">
+        <div class="font-mono" style="color: var(--text-muted); letter-spacing: 0.2em; margin-bottom: 16px;">
+            // NO SUBSCRIPTION TIERS CONFIGURED
+        </div>
+        <a href="{{ url_for('plan_new') }}" class="btn btn-godzilla">
+            <i class="bi bi-plus-circle-fill"></i> CREATE FIRST TIER
+        </a>
     </div>
 {% endif %}
 
 <div class="alert alert-info mt-3">
-    <strong>💡 Tip:</strong> Changes apply instantly — no bot restart needed. Users see new prices when they run <code>/subscribe</code>.
+    <span class="font-mono" style="font-size: 10px; letter-spacing: 0.2em; color: var(--neon-cyan);">//</span>
+    <strong>LIVE UPDATES:</strong> Changes apply instantly. Users see new prices on <code>/subscribe</code>.
 </div>
 {% endblock %}

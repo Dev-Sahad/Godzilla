@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+{% block title %}FEEDBACK // GODZILLA{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <div class="breadcrumb-mono">SYSTEM / COMMUNICATION / FEEDBACK</div>
+        <h2>USER REPORTS</h2>
+    </div>
+    <div class="font-mono" style="font-size: 11px; color: var(--text-muted); letter-spacing: 0.15em;">
+        <i class="bi bi-inbox"></i> INCOMING REPORTS
+    </div>
+</div>
+
+<!-- Stats row -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3 col-6">
+        <div class="stat-card accent-cyan">
+            <div class="stat-label"><i class="bi bi-envelope-open"></i> NEW</div>
+            <div class="stat-value">{{ counts.new or 0 }}</div>
+            <div class="stat-delta">AWAITING REVIEW</div>
+        </div>
+    </div>
+    <div class="col-md-3 col-6">
+        <div class="stat-card accent-amber">
+            <div class="stat-label"><i class="bi bi-eye-fill"></i> REVIEWING</div>
+            <div class="stat-value">{{ counts.reviewing or 0 }}</div>
+            <div class="stat-delta">IN PROGRESS</div>
+        </div>
+    </div>
+    <div class="col-md-3 col-6">
+        <div class="stat-card">
+            <div class="stat-label"><i class="bi bi-check-circle-fill"></i> RESOLVED</div>
+            <div class="stat-value">{{ counts.resolved or 0 }}</div>
+            <div class="stat-delta">COMPLETED</div>
+        </div>
+    </div>
+    <div class="col-md-3 col-6">
+        <div class="stat-card accent-magenta">
+            <div class="stat-label"><i class="bi bi-bug-fill"></i> BUGS</div>
+            <div class="stat-value">{{ counts.bug or 0 }}</div>
+            <div class="stat-delta">BUG REPORTS</div>
+        </div>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="card" style="padding: 16px 20px; margin-bottom: 20px;">
+    <div style="display: flex; gap: 16px; flex-wrap: wrap; align-items: center;">
+        <div>
+            <div class="breadcrumb-mono" style="margin-bottom: 6px;">STATUS</div>
+            <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                <a href="?status=all&type={{ type_filter }}" class="btn btn-sm {% if status_filter == 'all' %}btn-godzilla{% else %}btn-outline-primary{% endif %}">ALL</a>
+                <a href="?status=new&type={{ type_filter }}" class="btn btn-sm {% if status_filter == 'new' %}btn-godzilla{% else %}btn-outline-primary{% endif %}">NEW</a>
+                <a href="?status=reviewing&type={{ type_filter }}" class="btn btn-sm {% if status_filter == 'reviewing' %}btn-warning{% else %}btn-outline-primary{% endif %}">REVIEWING</a>
+                <a href="?status=resolved&type={{ type_filter }}" class="btn btn-sm {% if status_filter == 'resolved' %}btn-godzilla{% else %}btn-outline-primary{% endif %}">RESOLVED</a>
+                <a href="?status=rejected&type={{ type_filter }}" class="btn btn-sm {% if status_filter == 'rejected' %}btn-danger{% else %}btn-outline-primary{% endif %}">REJECTED</a>
+            </div>
+        </div>
+        <div>
+            <div class="breadcrumb-mono" style="margin-bottom: 6px;">TYPE</div>
+            <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                <a href="?type=all&status={{ status_filter }}" class="btn btn-sm {% if type_filter == 'all' %}btn-godzilla{% else %}btn-outline-primary{% endif %}">ALL</a>
+                <a href="?type=bug&status={{ status_filter }}" class="btn btn-sm {% if type_filter == 'bug' %}btn-danger{% else %}btn-outline-primary{% endif %}">🐛 BUGS</a>
+                <a href="?type=suggestion&status={{ status_filter }}" class="btn btn-sm {% if type_filter == 'suggestion' %}btn-warning{% else %}btn-outline-primary{% endif %}">💡 IDEAS</a>
+                <a href="?type=praise&status={{ status_filter }}" class="btn btn-sm {% if type_filter == 'praise' %}btn-godzilla{% else %}btn-outline-primary{% endif %}">❤️ PRAISE</a>
+                <a href="?type=other&status={{ status_filter }}" class="btn btn-sm {% if type_filter == 'other' %}btn-info{% else %}btn-outline-primary{% endif %}">💬 OTHER</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if reports %}
+<div class="card" style="padding: 0; overflow: hidden;">
+    <table class="table mb-0">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>TYPE</th>
+                <th>USER</th>
+                <th>SUBJECT</th>
+                <th style="text-align: center;">PRIORITY</th>
+                <th style="text-align: center;">STATUS</th>
+                <th>DATE</th>
+                <th style="text-align: right;">ACTION</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for r in reports %}
+            <tr style="cursor: pointer;" onclick="window.location.href='{{ url_for('feedback_detail', fb_id=r.id) }}'">
+                <td><code>#FB-{{ r.id }}</code></td>
+                <td>
+                    {% if r.feedback_type == 'bug' %}<span class="badge bg-danger">🐛 BUG</span>
+                    {% elif r.feedback_type == 'suggestion' %}<span class="badge bg-warning">💡 IDEA</span>
+                    {% elif r.feedback_type == 'praise' %}<span class="badge bg-success">❤️ PRAISE</span>
+                    {% else %}<span class="badge bg-info">💬 OTHER</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <div style="font-weight: 500;">{{ r.first_name or '—' }}</div>
+                    <div class="font-mono" style="font-size: 10px; color: var(--text-dim);">@{{ r.username or '—' }}</div>
+                </td>
+                <td style="max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                    {{ r.subject }}
+                </td>
+                <td style="text-align: center;">
+                    {% if r.priority == 'critical' %}<span class="badge bg-danger">CRIT</span>
+                    {% elif r.priority == 'high' %}<span class="badge bg-warning">HIGH</span>
+                    {% elif r.priority == 'low' %}<span class="badge bg-secondary">LOW</span>
+                    {% else %}<span class="badge bg-info">NORM</span>
+                    {% endif %}
+                </td>
+                <td style="text-align: center;">
+                    {% if r.status == 'new' %}<span class="badge bg-info">NEW</span>
+                    {% elif r.status == 'reviewing' %}<span class="badge bg-warning">REVIEW</span>
+                    {% elif r.status == 'resolved' %}<span class="badge bg-success">DONE</span>
+                    {% else %}<span class="badge bg-danger">REJECTED</span>
+                    {% endif %}
+                </td>
+                <td class="font-mono" style="font-size: 10px; color: var(--text-muted);">
+                    {{ r.created_at.strftime('%m.%d · %H:%M') }}
+                </td>
+                <td style="text-align: right;">
+                    <a href="{{ url_for('feedback_detail', fb_id=r.id) }}" class="btn btn-sm btn-outline-primary">
+                        VIEW <i class="bi bi-arrow-right"></i>
+                    </a>
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="card" style="padding: 60px; text-align: center;">
+    <div class="font-mono" style="color: var(--text-muted); letter-spacing: 0.2em;">
+        // NO REPORTS IN THIS FILTER
+    </div>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,51 +1,76 @@
 {% extends "base.html" %}
-{% block title %}Broadcast — GODZILLA{% endblock %}
+{% block title %}BROADCAST // GODZILLA{% endblock %}
 
 {% block content %}
-<h2><i class="bi bi-megaphone"></i> Broadcast</h2>
+<div class="page-header">
+    <div>
+        <div class="breadcrumb-mono">SYSTEM / COMMUNICATION / BROADCAST</div>
+        <h2>MASS TRANSMISSION</h2>
+    </div>
+    <div class="font-mono" style="font-size: 11px; color: var(--text-muted); letter-spacing: 0.15em;">
+        <i class="bi bi-broadcast-pin"></i> ENCRYPTED CHANNEL
+    </div>
+</div>
 
 <div class="row g-3">
-    <div class="col-md-7">
-        <div class="card p-4">
-            <h5>Send to all users</h5>
+    <div class="col-lg-7">
+        <div class="card" style="padding: 28px;">
+            <div class="breadcrumb-mono" style="margin-bottom: 6px;">TRANSMIT</div>
+            <h5 style="font-size: 14px; letter-spacing: 0.1em; margin-bottom: 20px;">SEND TO OPERATORS</h5>
+
             <form method="POST">
                 <div class="mb-3">
-                    <label class="form-label">Target Audience</label>
-                    <select name="target" class="form-select bg-dark text-light">
-                        <option value="all">All users</option>
-                        <option value="premium">Premium users only</option>
-                        <option value="free">Free users only</option>
+                    <label class="form-label">◦ Target Segment</label>
+                    <select name="target" class="form-select">
+                        <option value="all">ALL OPERATORS</option>
+                        <option value="premium">PREMIUM ONLY</option>
+                        <option value="free">FREE TIER ONLY</option>
                     </select>
                 </div>
                 <div class="mb-3">
-                    <label class="form-label">Message</label>
-                    <textarea name="message" rows="8" class="form-control bg-dark text-light"
-                              placeholder="Supports Markdown: *bold*, _italic_, `code`, [link](url)" required></textarea>
-                    <small class="text-muted">Message is sent with a "📢 Announcement" header automatically</small>
+                    <label class="form-label">◦ Message Payload</label>
+                    <textarea name="message" rows="9" class="form-control" required
+                              placeholder="Supports Markdown:
+*bold*, _italic_, `code`, [link](url)"></textarea>
+                    <small class="font-mono" style="font-size: 10px; color: var(--text-muted); display: block; margin-top: 6px;">
+                        // Auto-prefixed with "📢 Announcement" header
+                    </small>
                 </div>
-                <button type="submit" class="btn btn-godzilla fw-bold"
-                        onclick="return confirm('Send this broadcast to all selected users?')">
-                    <i class="bi bi-send"></i> Send Broadcast
+                <button type="submit" class="btn btn-godzilla"
+                        onclick="return confirm('Transmit broadcast to selected segment?')">
+                    <i class="bi bi-broadcast"></i> TRANSMIT
                 </button>
             </form>
         </div>
     </div>
 
-    <div class="col-md-5">
-        <div class="card p-3">
-            <h5><i class="bi bi-clock-history"></i> Recent Broadcasts</h5>
+    <div class="col-lg-5">
+        <div class="card" style="padding: 24px;">
+            <div class="breadcrumb-mono" style="margin-bottom: 6px;">ARCHIVE</div>
+            <h5 style="font-size: 14px; letter-spacing: 0.1em; margin-bottom: 16px;">RECENT TRANSMISSIONS</h5>
             {% for b in recent %}
-            <div class="border-bottom border-secondary py-2">
-                <div class="text-truncate small">{{ b.message }}</div>
-                <div class="text-muted small mt-1">
-                    ✅ {{ b.sent_to }} | ❌ {{ b.failed }} •
-                    {{ b.created_at.strftime('%m-%d %H:%M') }}
+            <div style="padding: 12px 0; border-bottom: 1px solid var(--border-subtle);">
+                <div style="font-size: 12px; color: var(--text-primary); line-height: 1.4; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">
+                    {{ b.message }}
+                </div>
+                <div class="font-mono" style="font-size: 10px; color: var(--text-muted); margin-top: 4px; letter-spacing: 0.1em;">
+                    {{ b.created_at.strftime('%m.%d · %H:%M') }}
+                    {% if b.sent_count %}
+                        · SENT: <span style="color: var(--neon-lime);">{{ b.sent_count }}</span>
+                    {% endif %}
                 </div>
             </div>
             {% else %}
-                <p class="text-muted small">No broadcasts sent yet.</p>
+            <div style="text-align: center; padding: 40px 0; color: var(--text-muted);" class="font-mono">
+                // NO TRANSMISSIONS YET
+            </div>
             {% endfor %}
         </div>
     </div>
+</div>
+
+<div class="alert alert-warning mt-3">
+    <span class="font-mono" style="font-size: 10px; letter-spacing: 0.2em; color: var(--neon-amber);">!</span>
+    <strong>CAUTION:</strong> Broadcasts reach all selected operators instantly. Preview twice before transmitting.
 </div>
 {% endblock %}

@@ -1,92 +1,95 @@
 {% extends "base.html" %}
-{% block title %}Payment Requests — GODZILLA{% endblock %}
+{% block title %}PAYMENT REQUESTS // GODZILLA{% endblock %}
 
 {% block content %}
-<h2><i class="bi bi-inbox"></i> Payment Requests</h2>
-<p class="text-muted mb-4">UPI payment requests awaiting verification.</p>
+<div class="page-header">
+    <div>
+        <div class="breadcrumb-mono">SYSTEM / FINANCE / PENDING REQUESTS</div>
+        <h2>UPI APPROVAL QUEUE</h2>
+    </div>
+</div>
 
 <!-- Status tabs -->
-<div class="btn-group mb-4">
-    <a href="{{ url_for('payment_requests', status='pending') }}"
-       class="btn btn-{% if status_filter == 'pending' %}warning{% else %}outline-warning{% endif %}">
-        ⏳ Pending <span class="badge bg-dark">{{ counts.pending }}</span>
-    </a>
-    <a href="{{ url_for('payment_requests', status='approved') }}"
-       class="btn btn-{% if status_filter == 'approved' %}success{% else %}outline-success{% endif %}">
-        ✅ Approved <span class="badge bg-dark">{{ counts.approved }}</span>
-    </a>
-    <a href="{{ url_for('payment_requests', status='rejected') }}"
-       class="btn btn-{% if status_filter == 'rejected' %}danger{% else %}outline-danger{% endif %}">
-        ❌ Rejected <span class="badge bg-dark">{{ counts.rejected }}</span>
-    </a>
-    <a href="{{ url_for('payment_requests', status='all') }}"
-       class="btn btn-{% if status_filter == 'all' %}secondary{% else %}outline-secondary{% endif %}">
-        All
-    </a>
+<div class="card" style="padding: 16px 20px; margin-bottom: 20px;">
+    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+        <a href="{{ url_for('payment_requests', status='pending') }}"
+           class="btn btn-sm {% if status_filter == 'pending' %}btn-warning{% else %}btn-outline-primary{% endif %}">
+            ⏳ PENDING · <span class="font-mono">{{ counts.pending }}</span>
+        </a>
+        <a href="{{ url_for('payment_requests', status='approved') }}"
+           class="btn btn-sm {% if status_filter == 'approved' %}btn-godzilla{% else %}btn-outline-primary{% endif %}">
+            ✅ APPROVED · <span class="font-mono">{{ counts.approved }}</span>
+        </a>
+        <a href="{{ url_for('payment_requests', status='rejected') }}"
+           class="btn btn-sm {% if status_filter == 'rejected' %}btn-danger{% else %}btn-outline-primary{% endif %}">
+            ❌ REJECTED · <span class="font-mono">{{ counts.rejected }}</span>
+        </a>
+        <a href="{{ url_for('payment_requests', status='all') }}"
+           class="btn btn-sm {% if status_filter == 'all' %}btn-godzilla{% else %}btn-outline-primary{% endif %}">
+            ALL
+        </a>
+    </div>
 </div>
 
 {% if requests %}
-<div class="card">
-    <table class="table table-dark table-hover mb-0">
+<div class="card" style="padding: 0; overflow: hidden;">
+    <table class="table mb-0">
         <thead>
             <tr>
                 <th>#</th>
-                <th>User</th>
-                <th>Plan</th>
-                <th>Amount</th>
+                <th>USER</th>
+                <th>PLAN</th>
+                <th style="text-align: right;">AMOUNT</th>
                 <th>UTR</th>
-                <th>Status</th>
-                <th>Date</th>
-                <th>Actions</th>
+                <th style="text-align: center;">STATUS</th>
+                <th>DATE</th>
+                <th style="text-align: right;">ACTIONS</th>
             </tr>
         </thead>
         <tbody>
-            {% for req in requests %}
+        {% for req in requests %}
             <tr>
-                <td>#{{ req.id }}</td>
+                <td><code>#{{ req.id }}</code></td>
                 <td>
-                    <strong>{{ req.username or '—' }}</strong>
-                    <small class="text-muted d-block">{{ req.telegram_id }}</small>
+                    <div style="font-weight: 500;">{{ req.username or '—' }}</div>
+                    <div class="font-mono" style="font-size: 10px; color: var(--text-dim);">{{ req.telegram_id }}</div>
                 </td>
-                <td><span class="badge bg-info text-dark">{{ req.plan_key }}</span></td>
-                <td><strong>₹{{ req.amount }}</strong></td>
+                <td class="font-mono">{{ req.plan_key }}</td>
+                <td style="text-align: right;" class="font-mono" style="color: var(--neon-lime); font-weight: 500;">₹{{ req.amount }}</td>
                 <td><code>{{ req.utr }}</code></td>
-                <td>
-                    {% if req.status == 'pending' %}
-                        <span class="badge bg-warning text-dark">⏳ Pending</span>
-                    {% elif req.status == 'approved' %}
-                        <span class="badge bg-success">✅ Approved</span>
-                    {% else %}
-                        <span class="badge bg-danger">❌ Rejected</span>
+                <td style="text-align: center;">
+                    {% if req.status == 'pending' %}<span class="badge bg-warning">PENDING</span>
+                    {% elif req.status == 'approved' %}<span class="badge bg-success">APPROVED</span>
+                    {% else %}<span class="badge bg-danger">REJECTED</span>
                     {% endif %}
                 </td>
-                <td><small>{{ req.created_at.strftime('%d %b %H:%M') }}</small></td>
-                <td>
+                <td class="font-mono" style="font-size: 10px; color: var(--text-muted);">
+                    {{ req.created_at.strftime('%m.%d · %H:%M') }}
+                </td>
+                <td style="text-align: right;">
                     {% if req.status == 'pending' %}
-                    <form method="POST" action="{{ url_for('payment_request_action', req_id=req.id, action='approve') }}" class="d-inline">
-                        <button type="submit" class="btn btn-sm btn-success"
-                                onclick="return confirm('Approve payment #{{ req.id }}?')">
-                            ✓
-                        </button>
+                    <form method="POST" action="{{ url_for('payment_request_action', req_id=req.id, action='approve') }}"
+                          style="display: inline;" onsubmit="return confirm('Approve this payment?')">
+                        <button class="btn btn-sm btn-godzilla"><i class="bi bi-check-lg"></i></button>
                     </form>
-                    <form method="POST" action="{{ url_for('payment_request_action', req_id=req.id, action='reject') }}" class="d-inline">
-                        <button type="submit" class="btn btn-sm btn-danger"
-                                onclick="return confirm('Reject payment #{{ req.id }}?')">
-                            ✗
-                        </button>
+                    <form method="POST" action="{{ url_for('payment_request_action', req_id=req.id, action='reject') }}"
+                          style="display: inline;" onsubmit="return confirm('Reject this payment?')">
+                        <button class="btn btn-sm btn-outline-danger"><i class="bi bi-x-lg"></i></button>
                     </form>
                     {% else %}
-                    <small class="text-muted">Processed</small>
+                    <span class="font-mono text-muted" style="font-size: 10px;">CLOSED</span>
                     {% endif %}
                 </td>
             </tr>
-            {% endfor %}
+        {% endfor %}
         </tbody>
     </table>
 </div>
 {% else %}
-<div class="card p-5 text-center">
-    <p class="text-muted mb-0">📭 No {{ status_filter if status_filter != 'all' else '' }} requests.</p>
+<div class="card" style="padding: 60px; text-align: center;">
+    <div class="font-mono" style="color: var(--text-muted); letter-spacing: 0.2em;">
+        // NO {{ status_filter|upper }} REQUESTS
+    </div>
 </div>
 {% endif %}
 {% endblock %}
