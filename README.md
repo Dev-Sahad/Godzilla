@@ -172,7 +172,7 @@ git branch -M main
 
 Create a **Private** repo on https://github.com/new named `GODZILLA`, then:
 ```bash
-git remote add origin https://github.com/SxhdSha/GODZILLA.git
+git remote add origin https://github.com/Dev-Sahad/GODZILLA.git
 git push -u origin main
 ```
 
