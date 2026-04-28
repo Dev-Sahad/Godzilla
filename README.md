@@ -172,7 +172,7 @@ git branch -M main
 
 Create a **Private** repo on https://github.com/new named `GODZILLA`, then:
 ```bash
-git remote add origin https://github.com/Dev-Sahad/GODZILLA.git
+git remote add origin https://github.com/SxhdSha/GODZILLA.git
 git push -u origin main
 ```
 
@@ -338,7 +338,7 @@ Just say "Continue to Phase 2" whenever you're ready!
 
 ## 📜 Credits
 
-- 💻 **Developer:** [![GitHub](https://img.shields.io/badge/GitHub-Dev--Sahad-0d1117?style=for-the-badge&logo=github&logoColor=white)](https://github.com/Dev-Sahad)
+- 💻 **Developer:** Sxhd
 - 🏠 **Community:** SHA COMMUNITY
 - 🧠 **AI Assistance:** Anthropic Claude
 - 🔧 **Libraries:** python-telegram-bot, yt-dlp, SQLAlchemy, aiohttp

@@ -180,7 +180,7 @@ async def about_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "bot on Telegram, built with love for SHA COMMUNITY.\n\n"
         "👨‍💻 *Developer:* Sxhd\n"
         "🏠 *Community:* SHA COMMUNITY\n"
-        "🌐 *GitHub:* github.com/Dev-Sahad\n\n"
+        "🌐 *GitHub:* github.com/SxhdSha\n\n"
         "_🦖 King of Bots. Always Online._"
     )
     await update.message.reply_text(about_text, parse_mode="Markdown")

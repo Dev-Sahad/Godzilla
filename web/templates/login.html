@@ -2,14 +2,14 @@
 {% block title %}GODZILLA // Authenticate{% endblock %}
 
 {% block login_content %}
-<div style="width: 100%; max-width: 440px; position: relative;">
-    <!-- Decorative corner brackets -->
-    <div style="position: absolute; top: -12px; left: -12px; width: 30px; height: 30px; border-top: 2px solid var(--neon-lime); border-left: 2px solid var(--neon-lime);"></div>
-    <div style="position: absolute; top: -12px; right: -12px; width: 30px; height: 30px; border-top: 2px solid var(--neon-lime); border-right: 2px solid var(--neon-lime);"></div>
-    <div style="position: absolute; bottom: -12px; left: -12px; width: 30px; height: 30px; border-bottom: 2px solid var(--neon-lime); border-left: 2px solid var(--neon-lime);"></div>
-    <div style="position: absolute; bottom: -12px; right: -12px; width: 30px; height: 30px; border-bottom: 2px solid var(--neon-lime); border-right: 2px solid var(--neon-lime);"></div>
+<div style="width: 100%; max-width: 440px; position: relative; z-index: 10;">
+    <div class="glass-panel" style="padding: 48px 40px; position: relative;">
+        <!-- Decorative corner brackets (kept INSIDE so they don't block clicks) -->
+        <div style="position: absolute; top: -1px; left: -1px; width: 24px; height: 24px; border-top: 2px solid var(--neon-lime); border-left: 2px solid var(--neon-lime); pointer-events: none;"></div>
+        <div style="position: absolute; top: -1px; right: -1px; width: 24px; height: 24px; border-top: 2px solid var(--neon-lime); border-right: 2px solid var(--neon-lime); pointer-events: none;"></div>
+        <div style="position: absolute; bottom: -1px; left: -1px; width: 24px; height: 24px; border-bottom: 2px solid var(--neon-lime); border-left: 2px solid var(--neon-lime); pointer-events: none;"></div>
+        <div style="position: absolute; bottom: -1px; right: -1px; width: 24px; height: 24px; border-bottom: 2px solid var(--neon-lime); border-right: 2px solid var(--neon-lime); pointer-events: none;"></div>
 
-    <div class="glass-panel" style="padding: 48px 40px;">
         <div style="text-align: center; margin-bottom: 36px;">
             <div style="display: inline-flex; align-items: center; gap: 16px; margin-bottom: 24px;">
                 <div class="brand-logo" style="width: 48px; height: 48px; font-size: 24px;">G</div>
@@ -22,23 +22,21 @@
             <div class="font-mono" style="font-size: 11px; color: var(--text-muted); letter-spacing: 0.2em; text-transform: uppercase; margin-bottom: 8px;">
                 ◆ Authentication Required ◆
             </div>
-            <div class="font-mono" style="font-size: 11px; color: var(--text-dim);">
-                > access_level = <span style="color: var(--neon-lime);">ADMIN</span>
-            </div>
         </div>
 
-        <form method="POST">
+        <form method="POST" action="{{ url_for('login') }}" id="loginForm" autocomplete="on">
             <div class="mb-3">
-                <label class="form-label">◦ Operator ID</label>
-                <input type="text" class="form-control" name="username" required autofocus
+                <label class="form-label" for="usernameInput">◦ Operator ID</label>
+                <input type="text" id="usernameInput" class="form-control" name="username" required autofocus
                        placeholder="admin" autocomplete="username">
             </div>
             <div class="mb-4">
-                <label class="form-label">◦ Passkey</label>
-                <input type="password" class="form-control" name="password" required
+                <label class="form-label" for="passwordInput">◦ Passkey</label>
+                <input type="password" id="passwordInput" class="form-control" name="password" required
                        placeholder="••••••••" autocomplete="current-password">
             </div>
-            <button type="submit" class="btn btn-godzilla w-100" style="padding: 12px; letter-spacing: 0.3em;">
+            <button type="submit" id="loginBtn" class="btn btn-godzilla w-100"
+                    style="padding: 14px; letter-spacing: 0.3em; cursor: pointer; position: relative; z-index: 100;">
                 <i class="bi bi-shield-lock-fill"></i> AUTHENTICATE
             </button>
         </form>
@@ -52,8 +50,37 @@
 
     <div style="text-align: center; margin-top: 24px;" class="font-mono">
         <small style="font-size: 10px; color: var(--text-dim); letter-spacing: 0.15em;">
-            ©2026 · BUILT BY <span style="color: var(--neon-lime);">GitHub: @Dev-Sahad</span>
+            ©2026 · BUILT BY <span style="color: var(--neon-lime);">@sahad_____sha</span>
         </small>
     </div>
 </div>
+
+<script>
+// Failsafe: if button click somehow doesn't trigger form submit, force it
+document.addEventListener('DOMContentLoaded', function() {
+    var btn = document.getElementById('loginBtn');
+    var form = document.getElementById('loginForm');
+    if (btn && form) {
+        btn.addEventListener('click', function(e) {
+            // Validate manually
+            var u = document.getElementById('usernameInput').value.trim();
+            var p = document.getElementById('passwordInput').value;
+            if (!u || !p) {
+                e.preventDefault();
+                alert('Please fill in both fields');
+                return false;
+            }
+            // Form will submit naturally with type="submit"
+        });
+    }
+    // Allow Enter key to submit from any field
+    document.querySelectorAll('#loginForm input').forEach(function(input) {
+        input.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                form.submit();
+            }
+        });
+    });
+});
+</script>
 {% endblock %}

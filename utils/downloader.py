@@ -5,6 +5,7 @@ Key improvements:
 - 120s timeout per download (prevents infinite hangs)
 - Automatic retry on network errors (3 attempts)
 - Better headers (bypass Instagram/TikTok rate limits)
+- Cookie support for Instagram/Facebook (avoids login walls)
 - Smaller file size limit (40MB) to finish faster
 - Progress logging for debugging
 """
@@ -18,10 +19,37 @@ from config import DOWNLOAD_DIR, QUALITY_OPTIONS
 logger = logging.getLogger(__name__)
 
 # ============ TIMEOUT CONFIGURATION ============
-DOWNLOAD_TIMEOUT = 120           # 2 min total per download attempt
-SOCKET_TIMEOUT = 30              # 30s per HTTP request
-MAX_RETRIES = 3                  # retry 3x on network errors
-MAX_FILESIZE_MB = 40             # keep files small for faster upload to Telegram
+DOWNLOAD_TIMEOUT = 120
+SOCKET_TIMEOUT = 30
+MAX_RETRIES = 3
+MAX_FILESIZE_MB = 40
+
+# ============ COOKIES CONFIGURATION ============
+# Cookies file path — written from environment variable on startup
+COOKIES_FILE = os.path.join(os.path.dirname(__file__), "..", "cookies.txt")
+COOKIES_FILE = os.path.abspath(COOKIES_FILE)
+
+
+def _ensure_cookies_file():
+    """
+    Write cookies.txt from environment variable if set.
+    Supports two env vars:
+    - INSTAGRAM_COOKIES (Netscape format) — full cookies.txt content
+    - YTDLP_COOKIES (general) — full cookies.txt content
+    """
+    cookie_content = os.environ.get("INSTAGRAM_COOKIES") or os.environ.get("YTDLP_COOKIES", "")
+    if cookie_content and not os.path.exists(COOKIES_FILE):
+        try:
+            with open(COOKIES_FILE, "w") as f:
+                f.write(cookie_content)
+            logger.info(f"✅ Cookies file written to {COOKIES_FILE}")
+        except Exception as e:
+            logger.warning(f"Failed to write cookies file: {e}")
+
+
+# Run on module import
+_ensure_cookies_file()
+
 
 PLATFORM_MAP = {
     "youtube.com": "YouTube",
@@ -59,7 +87,13 @@ def is_valid_url(url: str) -> bool:
         return False
 
 
-def _get_base_opts(user_id, is_audio=False):
+def _needs_cookies(url: str) -> bool:
+    """Check if URL needs cookie auth (Instagram, Facebook, etc.)."""
+    domain = urlparse(url).netloc.lower()
+    return any(p in domain for p in ["instagram.com", "facebook.com", "fb.watch"])
+
+
+def _get_base_opts(user_id, url=None, is_audio=False):
     """Base yt-dlp options with robust network handling."""
     output_path = f"{DOWNLOAD_DIR}/{user_id}_%(id)s.%(ext)s"
 
@@ -68,30 +102,30 @@ def _get_base_opts(user_id, is_audio=False):
         "noplaylist": True,
         "quiet": True,
         "no_warnings": True,
-        # ============ TIMEOUT & RETRY ============
         "socket_timeout": SOCKET_TIMEOUT,
         "retries": MAX_RETRIES,
         "fragment_retries": MAX_RETRIES,
         "file_access_retries": 2,
         "extractor_retries": 2,
-        # ============ NETWORK HEADERS ============
-        # Instagram/TikTok block default yt-dlp user agent
         "http_headers": {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
-                          "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) "
+                          "AppleWebKit/605.1.15 (KHTML, like Gecko) "
+                          "Version/17.0 Mobile/15E148 Safari/604.1",
             "Accept-Language": "en-US,en;q=0.9",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
         },
-        # ============ PLATFORM-SPECIFIC ============
-        # Skip dash/hls manifests that often hang
         "prefer_ffmpeg": True,
         "keepvideo": False,
-        # Don't include subtitles (speeds up downloads significantly)
         "writesubtitles": False,
         "writeautomaticsub": False,
-        # Skip embeds that hang
         "embed_subs": False,
         "embed_thumbnail": False,
     }
+
+    # Add cookies if URL needs them and cookies file exists
+    if url and _needs_cookies(url) and os.path.exists(COOKIES_FILE):
+        opts["cookiefile"] = COOKIES_FILE
+        logger.info(f"Using cookies for {urlparse(url).netloc}")
 
     if is_audio:
         opts["format"] = f"bestaudio[filesize<{MAX_FILESIZE_MB}M]/bestaudio/best"
@@ -111,7 +145,6 @@ def _download_sync(ydl_opts, url, is_audio=False):
             logger.info(f"Starting download: {url}")
             info = ydl.extract_info(url, download=True)
 
-            # Handle playlists
             if "entries" in info:
                 if not info["entries"]:
                     raise Exception("No content found in URL")
@@ -132,15 +165,27 @@ def _download_sync(ydl_opts, url, is_audio=False):
             return filename, title
     except yt_dlp.utils.DownloadError as e:
         msg = str(e).lower()
+        if "rate-limit" in msg or "rate limit" in msg or "login required" in msg:
+            if "instagram" in msg:
+                raise Exception(
+                    "Instagram blocked this request. The bot needs Instagram cookies "
+                    "configured by admin. Try a YouTube link instead, or contact @sahad_____sha."
+                )
+            raise Exception(
+                "Platform rate-limited us. Try again in 5-10 minutes, or use a different platform."
+            )
         if "private" in msg:
             raise Exception("This content is private. Bot can only download public posts.")
-        if "unavailable" in msg or "removed" in msg:
+        if "unavailable" in msg or "removed" in msg or "deleted" in msg:
             raise Exception("Content has been removed or is unavailable.")
         if "login" in msg or "sign in" in msg:
-            raise Exception("This platform requires login for this content. Try a public post.")
-        if "429" in msg or "rate" in msg:
-            raise Exception("Platform rate-limited us. Try again in 1-2 minutes.")
-        raise Exception(f"Download error: {str(e)[:100]}")
+            raise Exception(
+                "This content requires login. The bot can only access public content. "
+                "Try posts from public accounts."
+            )
+        if "429" in msg:
+            raise Exception("Too many requests right now. Wait 5 minutes and try again.")
+        raise Exception(f"Download error: {str(e)[:120]}")
     except Exception as e:
         logger.error(f"Download failed for {url}: {e}")
         raise
@@ -169,7 +214,7 @@ async def download_video(url, user_id, quality="720p"):
 
     format_str = QUALITY_OPTIONS.get(quality, QUALITY_OPTIONS.get("720p", "best[height<=720]"))
 
-    ydl_opts = _get_base_opts(user_id, is_audio=False)
+    ydl_opts = _get_base_opts(user_id, url=url, is_audio=False)
     ydl_opts["format"] = (
         f"{format_str}[filesize<{MAX_FILESIZE_MB}M]/"
         f"{format_str}/"
@@ -186,7 +231,7 @@ async def download_video(url, user_id, quality="720p"):
 async def download_audio(url, user_id):
     """Download audio as MP3."""
     os.makedirs(DOWNLOAD_DIR, exist_ok=True)
-    ydl_opts = _get_base_opts(user_id, is_audio=True)
+    ydl_opts = _get_base_opts(user_id, url=url, is_audio=True)
 
     return await _run_with_timeout(
         lambda: _download_sync(ydl_opts, url, is_audio=True),
@@ -208,10 +253,13 @@ async def download_thumbnail(url, user_id):
         "socket_timeout": 20,
         "retries": 2,
         "http_headers": {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
-                          "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) "
+                          "AppleWebKit/605.1.15 (KHTML, like Gecko) "
+                          "Version/17.0 Mobile/15E148 Safari/604.1",
         },
     }
+    if _needs_cookies(url) and os.path.exists(COOKIES_FILE):
+        ydl_opts["cookiefile"] = COOKIES_FILE
 
     def _sync():
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -221,7 +269,6 @@ async def download_thumbnail(url, user_id):
             title = info.get("title", "Unknown")
             thumbnails = info.get("thumbnails", [])
             if thumbnails:
-                # yt-dlp saves the thumbnail; find it
                 import glob
                 matches = glob.glob(f"{DOWNLOAD_DIR}/{user_id}_thumb_*")
                 if matches:
@@ -240,10 +287,13 @@ async def get_video_info(url):
         "socket_timeout": 15,
         "retries": 1,
         "http_headers": {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
-                          "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) "
+                          "AppleWebKit/605.1.15 (KHTML, like Gecko) "
+                          "Version/17.0 Mobile/15E148 Safari/604.1",
         },
     }
+    if _needs_cookies(url) and os.path.exists(COOKIES_FILE):
+        ydl_opts["cookiefile"] = COOKIES_FILE
 
     def _sync():
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:

@@ -1,6 +1,6 @@
 """
 GODZILLA BOT v3.0.0 - ULTRA EDITION
-Developer: @Sxhd_Sha
+Developer: Sxhd
 Community: SHA COMMUNITY
 
 Main entry point — registers all handlers and starts the bot.

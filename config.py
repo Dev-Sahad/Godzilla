@@ -9,7 +9,7 @@ load_dotenv()
 # ===== BOT INFO =====
 BOT_NAME = "GODZILLA"
 BOT_VERSION = "3.0.0"
-BOT_OWNER = "@Sxhd_Sha"
+BOT_OWNER = "Sxhd"
 BOT_COMMUNITY = "SHA COMMUNITY"
 BOT_BORN = "2025"
 BOT_PREFIX = "/"
